@@ -1,6 +1,6 @@
 {
   "$schema": "vscode://schemas/color-theme",
-  "name": "MD3 Expressive 150 Light",
+  "name": "MD3:Expressive 150 Light",
   "colors": {
     "focusBorder": "#1b6d32",
     "foreground": "#083a23",

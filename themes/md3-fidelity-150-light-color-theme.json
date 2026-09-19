@@ -1,6 +1,6 @@
 {
   "$schema": "vscode://schemas/color-theme",
-  "name": "MD3 Fidelity 150 Light",
+  "name": "MD3:Fidelity 150 Light",
   "colors": {
     "focusBorder": "#006b2a",
     "foreground": "#171d17",

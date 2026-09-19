@@ -1,6 +1,6 @@
 {
   "$schema": "vscode://schemas/color-theme",
-  "name": "MD3 TonalSpot 150 Light",
+  "name": "MD3:TonalSpot 150 Light",
   "colors": {
     "focusBorder": "#3d6942",
     "foreground": "#2d342c",

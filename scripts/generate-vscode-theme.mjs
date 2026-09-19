@@ -298,12 +298,53 @@ function buildThemeFile(name, appearance, mapping, syntaxHex) {
     };
 }
 
+async function emitOne(scheme, appearanceName, stem, themeName, mapping, contrast, args) {
+    guardContrast(scheme[appearanceName], mapping, `${stem} (${appearanceName})`, contrast.textFloor);
+    // Syntax backgrounds mirror the mapping: editor surface + the two
+    // opaque neutral selection steps syntax must survive inside of.
+    const editorRole = mapping.colors['editor.background'];
+    const selectionRole = mapping.colors['editor.selectionBackground'];
+    const inactiveRole = mapping.colors['editor.inactiveSelectionBackground'];
+    if (typeof editorRole !== 'string' || typeof selectionRole !== 'string' || typeof inactiveRole !== 'string') {
+        fail(`syntax background roles must be opaque strings for ${stem} (${appearanceName})`);
+    }
+    const editorBg = scheme[appearanceName][editorRole];
+    const selectionBgs = [scheme[appearanceName][selectionRole], scheme[appearanceName][inactiveRole]];
+    let syntax;
+    try {
+        syntax = resolveSyntaxPalettes(appearanceName, contrast.group, [editorBg, ...selectionBgs]);
+    } catch (error) {
+        fail(`${stem} (${appearanceName}) ${error.message}`);
+    }
+    guardSyntaxContrast(syntax.tokenColors, syntax.tokenTones, editorBg, selectionBgs, contrast.group, `${stem} (${appearanceName})`);
+    const syntaxHex = {
+        tokenColors: Object.fromEntries(Object.entries(syntax.tokenColors).map(([k, v]) => [k, formatHex(v)])),
+        semanticColors: Object.fromEntries(Object.entries(syntax.semanticColors).map(([k, v]) => [k, formatHex(v)]))
+    };
+    // Semantic tokens must track their TextMate counterparts exactly.
+    const counterpart = { newOperator: 'keywordControl', stringLiteral: 'string', customLiteral: 'function', numberLiteral: 'number' };
+    for (const [semantic, rule] of Object.entries(counterpart)) {
+        if (syntaxHex.semanticColors[semantic] !== syntaxHex.tokenColors[rule]) {
+            fail(`${stem} (${appearanceName}) semantic '${semantic}' diverged from token '${rule}'`);
+        }
+    }
+    const outFile = join(args.out, `${stem}-color-theme.json`);
+    await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[appearanceName], mapping, syntaxHex), null, 2)}\n`, 'utf8');
+    console.log(`wrote ${outFile}`);
+}
+
+function themeDisplayName(variant, hueOrSource, appearanceLabel, contrastSlug) {
+    const contrastLabel = contrastSlug === '' ? '' : contrastSlug === '-high' ? ' High' : ' Reduced';
+    return `MD3:${variant} ${hueOrSource} ${appearanceLabel}${contrastLabel}`;
+}
+
 async function main() {
     const args = parseArgs(process.argv.slice(2));
     const contrast = CONTRASTS[args.contrast];
     // Each resolved (appearance, contrast group) mapping must cover the
     // schema exactly: no missing key, no extra key.
-    for (const { name } of APPEARANCES) {
+    const wantedAppearances = args.oled ? ['dark'] : APPEARANCES.map((a) => a.name);
+    for (const name of wantedAppearances) {
         const mapping = resolveVscodeMapping(name, contrast.group, args.variant);
         const missing = VSCODE_COLOR_KEYS.filter((k) => !(k in mapping.colors));
         const extra = Object.keys(mapping.colors).filter((k) => !VSCODE_COLOR_KEYS.includes(k));
@@ -315,6 +356,7 @@ async function main() {
     const slug = args.hue === undefined
         ? `md3-${VARIANT_SLUGS[args.variant]}-${args.source}`
         : `md3-${VARIANT_SLUGS[args.variant]}-${args.hue}`;
+    const hueOrSource = args.hue === undefined ? args.source : String(args.hue);
     if (args.hue !== undefined) console.log(`hue ${args.hue} (C${args.chroma} T${args.tone}) -> source ${args.source}`);
     await mkdir(args.out, { recursive: true });
     const scheme = createTheme({
@@ -324,44 +366,22 @@ async function main() {
         platform: 'phone',
         oled: args.oled
     })(args.source);
-    const oledSlug = args.oled ? '-oled' : '';
-    const oledLabel = args.oled ? ' OLED' : '';
+    if (args.oled) {
+        // OLED emits ONLY the dark file. Light OLED would be hex-identical
+        // to plain light (mcu-helper resolves OLED against dark only), so
+        // it is never emitted: per-combo appearances are light / dark /
+        // dark-oled.
+        const mapping = resolveVscodeMapping('dark', contrast.group, args.variant);
+        const stem = `${slug}-dark-oled${contrast.slug}`;
+        const themeName = themeDisplayName(args.variant, hueOrSource, 'Dark OLED', contrast.slug);
+        await emitOne(scheme, 'dark', stem, themeName, mapping, contrast, args);
+        return;
+    }
     for (const { name, label } of APPEARANCES) {
         const mapping = resolveVscodeMapping(name, contrast.group, args.variant);
-        const stem = `${slug}-${name}${oledSlug}${contrast.slug}`;
-        const themeName = `MD3 ${args.variant} ${args.hue === undefined ? args.source : args.hue} ${label}${oledLabel}${contrast.slug === '' ? '' : contrast.slug === '-high' ? ' High' : ' Reduced'}`;
-        guardContrast(scheme[name], mapping, `${stem} (${name})`, contrast.textFloor);
-        // Syntax backgrounds mirror the mapping: editor surface + the two
-        // opaque neutral selection steps syntax must survive inside of.
-        const editorRole = mapping.colors['editor.background'];
-        const selectionRole = mapping.colors['editor.selectionBackground'];
-        const inactiveRole = mapping.colors['editor.inactiveSelectionBackground'];
-        if (typeof editorRole !== 'string' || typeof selectionRole !== 'string' || typeof inactiveRole !== 'string') {
-            fail(`syntax background roles must be opaque strings for ${stem} (${name})`);
-        }
-        const editorBg = scheme[name][editorRole];
-        const selectionBgs = [scheme[name][selectionRole], scheme[name][inactiveRole]];
-        let syntax;
-        try {
-            syntax = resolveSyntaxPalettes(name, contrast.group, [editorBg, ...selectionBgs]);
-        } catch (error) {
-            fail(`${stem} (${name}) ${error.message}`);
-        }
-        guardSyntaxContrast(syntax.tokenColors, syntax.tokenTones, editorBg, selectionBgs, contrast.group, `${stem} (${name})`);
-        const syntaxHex = {
-            tokenColors: Object.fromEntries(Object.entries(syntax.tokenColors).map(([k, v]) => [k, formatHex(v)])),
-            semanticColors: Object.fromEntries(Object.entries(syntax.semanticColors).map(([k, v]) => [k, formatHex(v)]))
-        };
-        // Semantic tokens must track their TextMate counterparts exactly.
-        const counterpart = { newOperator: 'keywordControl', stringLiteral: 'string', customLiteral: 'function', numberLiteral: 'number' };
-        for (const [semantic, rule] of Object.entries(counterpart)) {
-            if (syntaxHex.semanticColors[semantic] !== syntaxHex.tokenColors[rule]) {
-                fail(`${stem} (${name}) semantic '${semantic}' diverged from token '${rule}'`);
-            }
-        }
-        const outFile = join(args.out, `${stem}-color-theme.json`);
-        await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[name], mapping, syntaxHex), null, 2)}\n`, 'utf8');
-        console.log(`wrote ${outFile}`);
+        const stem = `${slug}-${name}${contrast.slug}`;
+        const themeName = themeDisplayName(args.variant, hueOrSource, label, contrast.slug);
+        await emitOne(scheme, name, stem, themeName, mapping, contrast, args);
     }
 }
 

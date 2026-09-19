@@ -2,11 +2,12 @@
   "name": "@sandlada/vscode-material-theme",
   "displayName": "MD3 Material Theme",
   "version": "0.0.1",
-  "description": "Material Design 3 (Material You) color themes for VSCode. Ported from @sandlada/opencode-material-theme (OpenCode TUI). No themes generated yet.",
+  "description": "Material Design 3 (Material You) color themes for VSCode. Ported from @sandlada/opencode-material-theme (OpenCode TUI). 291 static themes: 9 variants x 12 HCT hues (Monochrome hue 0 only) x light/dark/dark-oled.",
   "scripts": {
     "generate": "bun scripts/generate-md3-tokens.mjs",
     "matrix": "bun scripts/generate-md3-matrix.mjs --out ./tui",
-    "generate:vscode": "bun scripts/generate-vscode-theme.mjs"
+    "generate:vscode": "bun scripts/generate-vscode-theme.mjs",
+    "matrix:vscode": "bun scripts/generate-vscode-matrix.mjs --out ./themes"
   },
   "keywords": [
     "vscode",
@@ -31,44 +32,1459 @@
   "contributes": {
     "themes": [
       {
-        "label": "MD3 Expressive 150 Light",
+        "label": "MD3:Monochrome 0 Light",
         "uiTheme": "vs",
-        "path": "./themes/md3-expressive-150-light-color-theme.json"
+        "path": "./themes/md3-monochrome-0-light-color-theme.json"
       },
       {
-        "label": "MD3 Expressive 150 Dark",
+        "label": "MD3:Monochrome 0 Dark",
         "uiTheme": "vs-dark",
-        "path": "./themes/md3-expressive-150-dark-color-theme.json"
+        "path": "./themes/md3-monochrome-0-dark-color-theme.json"
       },
       {
-        "label": "MD3 Expressive 150 Light OLED",
+        "label": "MD3:Monochrome 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-monochrome-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 0 Light",
         "uiTheme": "vs",
-        "path": "./themes/md3-expressive-150-light-oled-color-theme.json"
+        "path": "./themes/md3-neutral-0-light-color-theme.json"
       },
       {
-        "label": "MD3 Expressive 150 Dark OLED",
+        "label": "MD3:Neutral 0 Dark",
         "uiTheme": "vs-dark",
-        "path": "./themes/md3-expressive-150-dark-oled-color-theme.json"
+        "path": "./themes/md3-neutral-0-dark-color-theme.json"
       },
       {
-        "label": "MD3 Fidelity 150 Light",
+        "label": "MD3:Neutral 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 30 Light",
         "uiTheme": "vs",
-        "path": "./themes/md3-fidelity-150-light-color-theme.json"
+        "path": "./themes/md3-neutral-30-light-color-theme.json"
       },
       {
-        "label": "MD3 Fidelity 150 Dark",
+        "label": "MD3:Neutral 30 Dark",
         "uiTheme": "vs-dark",
-        "path": "./themes/md3-fidelity-150-dark-color-theme.json"
+        "path": "./themes/md3-neutral-30-dark-color-theme.json"
       },
       {
-        "label": "MD3 TonalSpot 150 Light",
+        "label": "MD3:Neutral 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-neutral-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Neutral 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-neutral-330-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 0 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-0-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 0 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-0-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 30 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-30-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 30 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-30-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 150 Light",
         "uiTheme": "vs",
         "path": "./themes/md3-tonal-spot-150-light-color-theme.json"
       },
       {
-        "label": "MD3 TonalSpot 150 Dark",
+        "label": "MD3:TonalSpot 150 Dark",
         "uiTheme": "vs-dark",
         "path": "./themes/md3-tonal-spot-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:TonalSpot 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-330-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 0 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-0-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 0 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-0-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 30 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-30-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 30 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-30-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-vibrant-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Vibrant 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-vibrant-330-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 0 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-0-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 0 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-0-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 30 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-30-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 30 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-30-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Expressive 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-330-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 0 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-0-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 0 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-0-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 30 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-30-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 30 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-30-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Fidelity 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-330-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 0 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-0-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 0 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-0-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 30 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-30-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 30 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-30-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-content-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Content 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-content-330-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 0 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-0-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 0 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-0-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 30 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-30-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 30 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-30-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-rainbow-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:Rainbow 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-rainbow-330-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 0 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-0-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 0 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-0-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 0 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-0-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 30 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-30-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 30 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-30-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 30 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-30-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 60 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-60-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 60 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-60-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 60 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-60-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 90 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-90-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 90 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-90-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 90 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-90-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 120 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-120-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 120 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-120-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 120 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-120-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-150-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 180 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-180-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 180 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-180-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 180 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-180-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 210 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-210-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 210 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-210-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 210 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-210-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 240 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-240-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 240 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-240-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 240 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-240-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 270 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-270-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 270 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-270-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 270 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-270-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 300 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-300-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 300 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-300-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 300 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-300-dark-oled-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 330 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fruit-salad-330-light-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 330 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-330-dark-color-theme.json"
+      },
+      {
+        "label": "MD3:FruitSalad 330 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fruit-salad-330-dark-oled-color-theme.json"
       }
     ]
   },
