@@ -96,7 +96,7 @@ Not published yet. Once published (`vsce publish`, category `Themes`),
 install from the Extensions view or:
 
 ```sh
-code --install-extension sandlada.md3-material-theme
+code --install-extension sandlada.vscode-material-design-theme
 ```
 
 ### From a VSIX

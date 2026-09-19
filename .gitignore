@@ -1,4 +1,5 @@
 node_modules
+bun.lock
 *.md
 !README.md
 !AGENTS.md
@@ -9,6 +10,7 @@ package-lock.json
 dist
 build
 output
+*.vsix
 .claude
 .codex
 .opencode

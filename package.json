@@ -1,6 +1,6 @@
 {
-  "name": "@sandlada/vscode-material-theme",
-  "displayName": "MD3 Material Theme",
+  "name": "vscode-material-design-theme",
+  "displayName": "Material Design 3 Theme",
   "version": "0.0.1",
   "publisher": "sandlada",
   "description": "Material Design 3 (Material You) color themes for VSCode. Ported from @sandlada/opencode-material-theme (OpenCode TUI). 291 static themes: 9 variants x 12 HCT hues (Monochrome hue 0 only) x light/dark/dark-oled.",
@@ -16,7 +16,8 @@
     "generate": "bun scripts/generate-md3-tokens.mjs",
     "matrix": "bun scripts/generate-md3-matrix.mjs --out ./tui",
     "generate:vscode": "bun scripts/generate-vscode-theme.mjs",
-    "matrix:vscode": "bun scripts/generate-vscode-matrix.mjs --out ./themes"
+    "matrix:vscode": "bun scripts/generate-vscode-matrix.mjs --out ./themes",
+    "package": "vsce package --out sandlada-vscode-material-design-theme-0.0.1.vsix"
   },
   "keywords": [
     "vscode",
@@ -1497,8 +1498,10 @@
       }
     ]
   },
+  "icon": "images/icon/extension-icon-128.png",
   "files": [
     "themes/",
+    "images/",
     "README.md",
     "LICENSE"
   ],
@@ -1507,6 +1510,7 @@
   },
   "devDependencies": {
     "@material/material-color-utilities": "^0.4.0",
-    "@sandlada/mcu-helper": "^0.1.0-20260830.a"
+    "@sandlada/mcu-helper": "^0.1.0-20260830.a",
+    "@vscode/vsce": "^4.0.0"
   }
 }
