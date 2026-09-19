@@ -7,10 +7,11 @@ Ported from `@sandlada/opencode-material-theme` (static MD3 themes for the
 OpenCode TUI). Output is VSCode color-theme JSON, not CSS. No
 runtime/dynamic generation.
 
-Current phase: project + AGENTS port only. Do NOT generate theme files yet
-(`暂不生成主题`). `src/` + `scripts/` below are still the OpenCode-era
-legacy; they document the MD3 input side to carry over, not the VSCode
-output to emit.
+Current phase: schema + mapping done (`src/vscode-schema.js`,
+`src/vscode-mapping.js`). Do NOT generate theme files yet; the VSCode
+single-run + matrix generators are still TBD. `src/tui-schema.js`,
+`src/md3-mapping.js`, `scripts/` are OpenCode-era legacy (readability
+reference only).
 
 References (do not re-derive the VSCode contract from memory):
 
@@ -144,18 +145,27 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
 
 ## Workflow (order matters; VSCode generation NOT started)
 
-1. `src/tui-schema.js` — LEGACY (OpenCode 50 `theme.*` keys from upstream
-   `ayu.json`). Do not extend. The VSCode equivalent is a new curated
-   list (workbench IDs subset + TextMate scope set + semantic token set)
-   derived from `theme-defaults` + theme-color reference; file TBD
-   (e.g. `src/vscode-schema.js`).
-2. `src/md3-mapping.js` — LEGACY OpenCode mapping, kept as the
-   readability reference (`BASE` + `STD`/`LIGHT_STD`/`DARK_STD`/`REDUCED`/
-   `HIGH`/`MONOCHROME`, `resolveMapping(mode, group, variant)`). The
-   VSCode mapping (`resolveVscodeMapping(appearance, group, variant)` ->
-   `{ colors, tokenColors, semanticTokenColors }`) is TBD; it must reuse
-   the neutral-wash + text-hue + container-roulette rules and pass a
-   guard before any file ships.
+1. `src/vscode-schema.js` — DONE (v1 source of truth): 132 workbench
+   color IDs (curated from `dark_modern.json`/`dark_vs.json`) + 25
+   TextMate rules (scopes from `dark_vs.json`/`dark_plus.json`,
+   `fontStyle` fixed here) + 4 semantic tokens (`newOperator`,
+   `stringLiteral`, `customLiteral`, `numberLiteral`). Every emitted
+   file must fill it exactly (fail closed on drift). IDs outside it
+   fall back to VSCode defaults at runtime. `src/tui-schema.js` is
+   LEGACY (OpenCode 50 `theme.*` keys); do not extend.
+2. `src/vscode-mapping.js` — DONE (v1 source of truth):
+   `resolveVscodeMapping(appearance, group, variant)` ->
+   `{ colors, tokenRoles, semanticRoles }` (`BASE` + `STD`/`WASH`/
+   `LIGHT_STD`/`DARK_STD`/`REDUCED`/`HIGH`/`MONOCHROME`, mirroring the
+   `src/md3-mapping.js` structure). Reuses the neutral-wash + text-hue
+   + container-roulette rules; roles restricted to the 55 roles shared
+   by spec `2021`+`2025`; translucent `{ role, alpha }` only where the
+   theme-color reference demands non-opaque. Semantic roles track
+   their TextMate counterparts by construction. Verified: exact schema
+   coverage x 54 combos (2 appearances x 3 groups x 9 variants), all
+   roles in both spec sets, contrast sanity (text 4.5 / muted 3.0) on
+   probed hues. `src/md3-mapping.js` is LEGACY (readability reference
+   only).
 3. `scripts/generate-md3-tokens.mjs` — LEGACY single-run OpenCode
    generator (emits plain + oled dual-appearance; Bun-only because plain
    Node cannot resolve MCU's extensionless ESM). Do not run for VSCode
@@ -180,6 +190,9 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
   `contrastLevel: 0`, no suffix.
 - Never hand-pick colors: every workbench/token/semantic value must come
   from a resolved M3 role map, one resolved map per emitted file.
+  Translucent `{ role, alpha }` values are still role-derived (alpha is a
+  fixed `66` suffix, only where the theme-color reference demands
+  non-opaque).
 
 ## Repo conventions
 
