@@ -366,9 +366,9 @@ export const VSCODE_TOKEN_PROPERTY_TWEAKS = Object.freeze({
 });
 
 /**
- * UI-only v2: emitted files contain only workbench `colors` + `tokenColors: []`.
- * Token/semantic constants below are LEGACY (retained for a future syntax pass,
- * not emitted, not contrast-guarded).
+ * Workbench `colors` source of truth. Token/semantic constants below are
+ * LEGACY (kept for reference; the generator resolves syntax from
+ * `src/vscode-syntax-palettes.js` instead, which is contrast-guarded).
  *
  * @param {VscodeAppearance} appearance
  * @param {VscodeContrastGroup} contrastGroup

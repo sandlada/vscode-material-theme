@@ -254,9 +254,9 @@ export const VSCODE_COLOR_KEYS = Object.freeze([
 ]);
 
 /**
- * TextMate token rules (26). LEGACY in UI-only v2: retained for a future
- * syntax pass, not emitted (`tokenColors: []`). Scopes follow
- * `dark_vs.json` + `dark_plus.json`.
+ * TextMate token rules (26). Scopes follow `dark_vs.json` +
+ * `dark_plus.json`. Foregrounds come from `src/vscode-syntax-palettes.js`
+ * (global MD3 palette bank); `fontStyle` stays frozen here.
  */
 export const VSCODE_TOKEN_RULES = Object.freeze([
     { key: 'comment', fontStyle: '', scopes: ['comment'] },
@@ -294,7 +294,7 @@ export const VSCODE_TOKEN_RULES = Object.freeze([
 /** Token rule keys in schema order. */
 export const VSCODE_TOKEN_RULE_KEYS = Object.freeze(VSCODE_TOKEN_RULES.map((r) => r.key));
 
-/** Semantic tokens (4). LEGACY in UI-only v2: not emitted. */
+/** Semantic tokens (4). Each tracks its TextMate counterpart (see `src/vscode-syntax-palettes.js`). */
 export const VSCODE_SEMANTIC_KEYS = Object.freeze([
     'newOperator',
     'stringLiteral',

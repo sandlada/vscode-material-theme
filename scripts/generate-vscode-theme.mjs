@@ -1,17 +1,23 @@
 /**
- * Generate one MD3 VSCode color-theme pair (light + dark) from a source color.
+ * Generate MD3 VSCode color-theme files from a source color.
  *
- * One run emits two files (VSCode `uiTheme` is per file, so unlike OpenCode
- * there is no dual-appearance file):
- *   `md3-{variant}-{hue}-{light|dark}[-oled][-high|-reduced]-color-theme.json`
- * e.g. `md3-expressive-150-dark-color-theme.json`
+ * Appearances are exactly three: `light`, `dark`, `dark-oled`
+ * (there is NO `light-oled`: `mcu-helper` resolves OLED only against the
+ * dark scheme, so a light OLED file would be hex-identical to plain light).
  *
- * `--oled` emits the OLED pair instead of the plain pair: the dark file is
- * pitch-black (`background` + `surface` -> `#000000`, all other roles
- * unchanged); the light file is hex-identical to the plain light file by
- * construction (`mcu-helper` resolves OLED only against the dark scheme),
- * shipped under its own `-oled` stem so the matrix stays symmetric and
- * both appearances are selectable in the picker.
+ * - Without `--oled`: emits the plain pair
+ *   `md3-{variant}-{hue}-{light|dark}[-high|-reduced]-color-theme.json`
+ *   e.g. `md3-expressive-150-dark-color-theme.json`
+ * - With `--oled`: emits ONLY the dark OLED single file
+ *   `md3-{variant}-{hue}-dark-oled[-high|-reduced]-color-theme.json`
+ *   (pitch-black: `background` + `surface` -> `#000000`, all other roles
+ *   unchanged).
+ *
+ * Picker `name`/`label` format is `MD3:{Variant} {hue} {Light|Dark|Dark OLED}`
+ * (colon lives ONLY in the display name — never in file stems — because
+ * `a:b` file names are NTFS alternate-data-streams on Windows and git
+ * cannot check them out).
+ * e.g. `MD3:Expressive 150 Dark OLED`.
  *
  * Must run with Bun (`bun scripts/generate-vscode-theme.mjs ...`):
  * plain Node cannot resolve `@material/material-color-utilities`
@@ -27,8 +33,9 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Hct } from '@material/material-color-utilities';
 import { calculateContrastRatio, createTheme, formatHex, MaterialContrastLevel, MaterialVariant } from '@sandlada/mcu-helper';
-import { VSCODE_COLOR_KEYS } from '../src/vscode-schema.js';
+import { VSCODE_COLOR_KEYS, VSCODE_SEMANTIC_KEYS, VSCODE_TOKEN_RULES } from '../src/vscode-schema.js';
 import { resolveVscodeMapping } from '../src/vscode-mapping.js';
+import { resolveSyntaxPalettes, SYNTAX_TIER_BY_RULE } from '../src/vscode-syntax-palettes.js';
 
 const VARIANTS = Object.freeze({
     Monochrome: MaterialVariant.Monochrome,
@@ -233,23 +240,61 @@ function guardContrast(appearance, mapping, label, textFloor) {
         if (typeof washValue === 'string') continue;
         check(intOf(fg), blendInt(appearance[washValue.role], intOf(bg), washValue.alpha), 3.0, 'blend', `${fg} on ${wash} over ${bg}`);
     }
-    // UI-only v2: no token rules emitted (tokenColors: []), so no token
-    // contrast checks. Selection readability is covered by the opaque
-    // editor.foreground check below via BLEND_PAIRS + TEXT_PAIRS.
+    // Syntax readability is guarded separately by guardSyntaxContrast
+    // (palette tones vs editor + selection backgrounds). Selection
+    // readability of the UI foreground stays covered here via
+    // BLEND_PAIRS + TEXT_PAIRS.
     if (violations.length > 0) {
         fail(`unreadable ${label} mapping (override in src/vscode-mapping.js):\n  ${violations.join('\n  ')}`);
     }
 }
 
-/** Build one UI-only VSCode color-theme file object for a single appearance. */
-function buildThemeFile(name, appearance, mapping) {
+/**
+ * Fail closed when any palette syntax color is unreadable on the editor
+ * surface or inside the opaque selection steps. This re-verifies (in the
+ * generator, against hex-free ARGB ints) what `resolveSyntaxPalettes`
+ * already guarantees by construction, so a module/generator skew aborts
+ * instead of shipping.
+ */
+function guardSyntaxContrast(tokenColors, tokenTones, editorBg, selectionBgs, contrastGroup, label) {
+    const textFloor = contrastGroup === 'reduced' ? 3.0 : 4.5;
+    const violations = [];
+    for (const rule of VSCODE_TOKEN_RULES) {
+        const argb = tokenColors[rule.key];
+        if (argb === undefined) {
+            violations.push(`syntax missing rule ${rule.key}`);
+            continue;
+        }
+        const tier = SYNTAX_TIER_BY_RULE[rule.key];
+        const floor = tier === 'muted' ? 3.0 : textFloor;
+        const worst = Math.min(...[editorBg, ...selectionBgs].map((bg) => calculateContrastRatio(argb, bg)));
+        if (worst < floor) {
+            violations.push(`syntax ${rule.key} (T${tokenTones[rule.key]}) ratio ${worst.toFixed(2)} < ${floor}`);
+        }
+    }
+    if (violations.length > 0) {
+        fail(`unreadable ${label} syntax (retune src/vscode-syntax-palettes.js):\n  ${violations.join('\n  ')}`);
+    }
+}
+
+/** Build one VSCode color-theme file object for a single appearance. */
+function buildThemeFile(name, appearance, mapping, syntaxHex) {
     const colors = {};
     for (const key of VSCODE_COLOR_KEYS) colors[key] = toHex(appearance, mapping.colors[key]);
+    const tokenColors = VSCODE_TOKEN_RULES.map((rule) => {
+        const setting = { foreground: syntaxHex.tokenColors[rule.key] };
+        if (rule.fontStyle) setting.fontStyle = rule.fontStyle;
+        return { name: rule.key, scope: rule.scopes, settings: setting };
+    });
+    const semanticTokenColors = {};
+    for (const key of VSCODE_SEMANTIC_KEYS) semanticTokenColors[key] = syntaxHex.semanticColors[key];
     return {
         $schema: 'vscode://schemas/color-theme',
         name,
         colors,
-        tokenColors: []
+        tokenColors,
+        semanticHighlighting: true,
+        semanticTokenColors
     };
 }
 
@@ -286,8 +331,36 @@ async function main() {
         const stem = `${slug}-${name}${oledSlug}${contrast.slug}`;
         const themeName = `MD3 ${args.variant} ${args.hue === undefined ? args.source : args.hue} ${label}${oledLabel}${contrast.slug === '' ? '' : contrast.slug === '-high' ? ' High' : ' Reduced'}`;
         guardContrast(scheme[name], mapping, `${stem} (${name})`, contrast.textFloor);
+        // Syntax backgrounds mirror the mapping: editor surface + the two
+        // opaque neutral selection steps syntax must survive inside of.
+        const editorRole = mapping.colors['editor.background'];
+        const selectionRole = mapping.colors['editor.selectionBackground'];
+        const inactiveRole = mapping.colors['editor.inactiveSelectionBackground'];
+        if (typeof editorRole !== 'string' || typeof selectionRole !== 'string' || typeof inactiveRole !== 'string') {
+            fail(`syntax background roles must be opaque strings for ${stem} (${name})`);
+        }
+        const editorBg = scheme[name][editorRole];
+        const selectionBgs = [scheme[name][selectionRole], scheme[name][inactiveRole]];
+        let syntax;
+        try {
+            syntax = resolveSyntaxPalettes(name, contrast.group, [editorBg, ...selectionBgs]);
+        } catch (error) {
+            fail(`${stem} (${name}) ${error.message}`);
+        }
+        guardSyntaxContrast(syntax.tokenColors, syntax.tokenTones, editorBg, selectionBgs, contrast.group, `${stem} (${name})`);
+        const syntaxHex = {
+            tokenColors: Object.fromEntries(Object.entries(syntax.tokenColors).map(([k, v]) => [k, formatHex(v)])),
+            semanticColors: Object.fromEntries(Object.entries(syntax.semanticColors).map(([k, v]) => [k, formatHex(v)]))
+        };
+        // Semantic tokens must track their TextMate counterparts exactly.
+        const counterpart = { newOperator: 'keywordControl', stringLiteral: 'string', customLiteral: 'function', numberLiteral: 'number' };
+        for (const [semantic, rule] of Object.entries(counterpart)) {
+            if (syntaxHex.semanticColors[semantic] !== syntaxHex.tokenColors[rule]) {
+                fail(`${stem} (${name}) semantic '${semantic}' diverged from token '${rule}'`);
+            }
+        }
         const outFile = join(args.out, `${stem}-color-theme.json`);
-        await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[name], mapping), null, 2)}\n`, 'utf8');
+        await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[name], mapping, syntaxHex), null, 2)}\n`, 'utf8');
         console.log(`wrote ${outFile}`);
     }
 }

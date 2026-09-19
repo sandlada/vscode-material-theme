@@ -2,6 +2,7 @@ node_modules
 *.md
 !README.md
 !AGENTS.md
+!RULE.md
 !SECURITY.md
 !CODE_OF_CONDUCT.md
 package-lock.json
