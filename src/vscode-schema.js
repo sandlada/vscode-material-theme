@@ -222,7 +222,18 @@ export const VSCODE_TEXT_KEYS = Object.freeze([
     'textCodeBlock.background'
 ]);
 
-/** All workbench color IDs every emitted file must fill (132). */
+/** Context/right-click menus (6). `menu.background` is `surface` so menus
+ * read as part of the theme instead of VSCode's neutral fallback. */
+export const VSCODE_MENU_KEYS = Object.freeze([
+    'menu.background',
+    'menu.foreground',
+    'menu.selectionBackground',
+    'menu.selectionForeground',
+    'menu.separatorBackground',
+    'menu.border'
+]);
+
+/** All workbench color IDs every emitted file must fill (138). */
 export const VSCODE_COLOR_KEYS = Object.freeze([
     ...VSCODE_BASE_KEYS,
     ...VSCODE_BUTTON_KEYS,
@@ -238,7 +249,8 @@ export const VSCODE_COLOR_KEYS = Object.freeze([
     ...VSCODE_TERMINAL_KEYS,
     ...VSCODE_STATUS_KEYS,
     ...VSCODE_PANEL_KEYS,
-    ...VSCODE_TEXT_KEYS
+    ...VSCODE_TEXT_KEYS,
+    ...VSCODE_MENU_KEYS
 ]);
 
 /**

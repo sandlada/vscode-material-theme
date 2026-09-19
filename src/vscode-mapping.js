@@ -27,6 +27,15 @@
  *   `tertiaryContainer`/`errorContainer` too saturated for washes, and
  *   tinted diff washes failed on some variant. Diff hue survives through
  *   git-decoration + diff token text roles.
+ * - Selection backgrounds are opaque neutral steps (`surfaceContainerHighest`
+ *   active / `surfaceContainerHigh` inactive), NOT tinted and NOT translucent:
+ *   any mid-luminance tint washes syntax tokens out (translucent `primary@66`
+ *   left nearly every token at ~3.3 and comments <3.0 in all 6 test themes;
+ *   opaque `primaryContainer` fails dark outright, e.g. Expressive-dark 1.02).
+ *   On neutral opaque the text tokens hold >=4.5 and muted comments hold
+ *   >=3.28 across variants/modes (6-theme probe), and token colors survive
+ *   inside the selection (no `editor.selectionForeground` override). List active/inactive follow
+ *   the same Highest/High steps so the two states stay distinct.
  * - Roles are restricted to the 55 roles present in BOTH `specVersion`
  *   `'2021'` and `'2025'` (the 2025-only `*Dim` roles are never used),
  *   so one mapping stays valid across spec versions.
@@ -50,7 +59,7 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'icon.foreground': 'onSurface',
     'widget.border': 'outlineVariant',
     'widget.shadow': 'shadow',
-    'selection.background': 'secondaryContainer',
+    'selection.background': 'surfaceContainerHighest',
     'sash.hoverBorder': 'primary',
     // Buttons + checkboxes
     'button.background': 'primary',
@@ -79,9 +88,11 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'badge.background': 'primary',
     'badge.foreground': 'onPrimary',
     'progressBar.background': 'primary',
-    // Lists + trees (selection/warning foregrounds are STD: on*Container)
-    'list.activeSelectionBackground': 'secondaryContainer',
-    'list.inactiveSelectionBackground': 'surfaceContainerHighest',
+    // Lists + trees (selection foreground is onSurface on the neutral
+    // selection step; active Highest vs inactive High keeps states distinct)
+    'list.activeSelectionBackground': 'surfaceContainerHighest',
+    'list.activeSelectionForeground': 'onSurface',
+    'list.inactiveSelectionBackground': 'surfaceContainerHigh',
     'list.inactiveSelectionForeground': 'onSurface',
     'list.hoverBackground': 'surfaceContainerHigh',
     'list.hoverForeground': 'onSurface',
@@ -121,7 +132,8 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'editor.foreground': 'onSurface',
     'editorLineNumber.activeForeground': 'onSurface',
     'editorCursor.foreground': 'primary',
-    'editor.selectionBackground': 'secondaryContainer',
+    'editor.selectionBackground': 'surfaceContainerHighest',
+    'editor.inactiveSelectionBackground': 'surfaceContainerHigh',
     'editor.lineHighlightBackground': 'surfaceContainer',
     'editorWhitespace.foreground': 'outlineVariant',
     'editorIndentGuide.background': 'outlineVariant',
@@ -141,6 +153,7 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'terminal.background': 'surfaceContainer',
     'terminal.foreground': 'onSurface',
     'terminalCursor.foreground': 'primary',
+    'terminal.selectionBackground': 'surfaceContainerHighest',
     // Status bar + title bar
     'statusBar.background': 'surfaceContainer',
     'statusBar.foreground': 'onSurface',
@@ -170,31 +183,38 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'textLink.activeForeground': 'primary',
     'textBlockQuote.background': 'surfaceContainerHigh',
     'textBlockQuote.border': 'outlineVariant',
-    'textCodeBlock.background': 'surfaceContainerHigh'
+    'textCodeBlock.background': 'surfaceContainerHigh',
+    // Menus (context/right-click): surface body, subtle border, neutral
+    // selection step shared with list selection
+    'menu.background': 'surface',
+    'menu.foreground': 'onSurface',
+    'menu.selectionBackground': 'surfaceContainerHighest',
+    'menu.selectionForeground': 'onSurface',
+    'menu.separatorBackground': 'outlineVariant',
+    'menu.border': 'outlineVariant'
 });
 
 /**
  * Standard-contrast entries shared by both appearances. `on*Container`
  * foregrounds are only safe at default/reduced contrast; high contrast
  * needs HIGH overrides (every `on*Container` matches the background).
+ * (List selection foreground lives in BASE as `onSurface`; see header.)
  */
 export const VSCODE_COLOR_STD = Object.freeze({
-    'list.activeSelectionForeground': 'onSecondaryContainer',
     'list.warningForeground': 'onErrorContainer',
     'editorWarning.foreground': 'onErrorContainer'
 });
 
 /** Translucent washes + drop feedback (both appearances, all contrasts).
- * Alpha `66` follows the `dark_modern.json` match-highlight convention. */
+ * Alpha `66` follows the `dark_modern.json` match-highlight convention.
+ * Selection is intentionally NOT here (opaque neutral steps, see header). */
 export const VSCODE_COLOR_WASH = Object.freeze({
-    'editor.inactiveSelectionBackground': { role: 'secondaryContainer', alpha: '66' },
     'editor.findMatchBackground': { role: 'primary', alpha: '66' },
     'editor.findMatchHighlightBackground': { role: 'secondaryContainer', alpha: '66' },
     'editor.hoverHighlightBackground': { role: 'secondaryContainer', alpha: '66' },
     'editor.rangeHighlightBackground': { role: 'secondaryContainer', alpha: '66' },
     'editorBracketMatch.background': { role: 'secondaryContainer', alpha: '66' },
-    'editorGroup.dropBackground': { role: 'primary', alpha: '66' },
-    'terminal.selectionBackground': { role: 'secondaryContainer', alpha: '66' }
+    'editorGroup.dropBackground': { role: 'primary', alpha: '66' }
 });
 
 /** Standard-contrast light-only diff washes (neutral containers). */
@@ -245,7 +265,6 @@ export const VSCODE_COLOR_MONOCHROME = Object.freeze({
  * `*Container` diff washes fall back to one neutral step.
  */
 export const VSCODE_COLOR_HIGH = Object.freeze({
-    'list.activeSelectionForeground': 'onSurface',
     'list.warningForeground': 'errorContainer',
     'editorWarning.foreground': 'errorContainer',
     'diffEditor.insertedTextBackground': { role: 'surfaceContainerHigh', alpha: '66' },

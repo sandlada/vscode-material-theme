@@ -145,8 +145,10 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
 
 ## Workflow (order matters; VSCode generation NOT started)
 
-1. `src/vscode-schema.js` — DONE (v1 source of truth): 132 workbench
-   color IDs (curated from `dark_modern.json`/`dark_vs.json`) + 25
+1. `src/vscode-schema.js` — DONE (v1 source of truth): 138 workbench
+   color IDs (curated from `dark_modern.json`/`dark_vs.json`, incl. 6
+   `menu.*` IDs so context menus use `surface` + `outlineVariant`
+   border instead of the neutral fallback) + 25
    TextMate rules (scopes from `dark_vs.json`/`dark_plus.json`,
    `fontStyle` fixed here) + 4 semantic tokens (`newOperator`,
    `stringLiteral`, `customLiteral`, `numberLiteral`). Every emitted
@@ -160,17 +162,32 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
    `src/md3-mapping.js` structure). Reuses the neutral-wash + text-hue
    + container-roulette rules; roles restricted to the 55 roles shared
    by spec `2021`+`2025`; translucent `{ role, alpha }` only where the
-   theme-color reference demands non-opaque. Semantic roles track
+   theme-color reference demands non-opaque. Borders stay `outlineVariant`
+   throughout (a `outline` pass on chrome separators was previewed and
+   reverted: too heavy, `outline` runs much darker than `outlineVariant`).
+   Selection is opaque neutral
+   (`surfaceContainerHighest` active / `surfaceContainerHigh` inactive):
+   any mid-luminance tint washes syntax tokens out (translucent
+   `primary@66` left nearly every token at ~3.3 and comments <3.0;
+   opaque `primaryContainer` fails dark outright, e.g. Expressive-dark
+   1.02); on neutral, text tokens hold >=4.5 and muted comments >=3.28
+   with token colors surviving inside the selection. Semantic roles track
    their TextMate counterparts by construction. Verified: exact schema
    coverage x 54 combos (2 appearances x 3 groups x 9 variants), all
    roles in both spec sets, contrast sanity (text 4.5 / muted 3.0) on
    probed hues. `src/md3-mapping.js` is LEGACY (readability reference
    only).
-3. `scripts/generate-md3-tokens.mjs` — LEGACY single-run OpenCode
-   generator (emits plain + oled dual-appearance; Bun-only because plain
-   Node cannot resolve MCU's extensionless ESM). Do not run for VSCode
-   output. The VSCode single-run generator is TBD (must emit a light/dark
-   pair, `vscode://schemas/color-theme`, static hex only).
+3. `scripts/generate-vscode-theme.mjs` — DONE (v1 single-run VSCode
+   generator; Bun-only, same reason as above). One run emits a light/dark
+   pair (`md3-{variant}-{hue}-{light|dark}[-high|-reduced]-color-theme.json`,
+   `vscode://schemas/color-theme`, static hex only, `oled: false`).
+   Fails closed on mapping/schema drift + unknown roles + contrast
+   violations (text 4.5, muted 3.0; reduced text 3.0 by design; alpha
+   washes verified by construction). Usage:
+   `bun scripts/generate-vscode-theme.mjs --variant Expressive --hue 150
+   --out ./themes` (or `--source '#rrggbb'` instead of `--hue`).
+   `scripts/generate-md3-tokens.mjs` is LEGACY (OpenCode dual-appearance);
+   do not run for VSCode output.
 4. `scripts/generate-md3-matrix.mjs --out ./tui` — LEGACY matrix driver
    (194 files). Do not run. The VSCode matrix driver is TBD (`--out
    ./themes`, split files, `include` strategy TBD, fail fast on guard).

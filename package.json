@@ -5,7 +5,8 @@
   "description": "Material Design 3 (Material You) color themes for VSCode. Ported from @sandlada/opencode-material-theme (OpenCode TUI). No themes generated yet.",
   "scripts": {
     "generate": "bun scripts/generate-md3-tokens.mjs",
-    "matrix": "bun scripts/generate-md3-matrix.mjs --out ./tui"
+    "matrix": "bun scripts/generate-md3-matrix.mjs --out ./tui",
+    "generate:vscode": "bun scripts/generate-vscode-theme.mjs"
   },
   "keywords": [
     "vscode",
@@ -26,6 +27,40 @@
   ],
   "engines": {
     "vscode": "^1.80.0"
+  },
+  "contributes": {
+    "themes": [
+      {
+        "label": "MD3 Expressive 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3 Expressive 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3 Fidelity 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-fidelity-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3 Fidelity 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-fidelity-150-dark-color-theme.json"
+      },
+      {
+        "label": "MD3 TonalSpot 150 Light",
+        "uiTheme": "vs",
+        "path": "./themes/md3-tonal-spot-150-light-color-theme.json"
+      },
+      {
+        "label": "MD3 TonalSpot 150 Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-tonal-spot-150-dark-color-theme.json"
+      }
+    ]
   },
   "files": [
     "themes/",

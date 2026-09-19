@@ -1,0 +1,310 @@
+/**
+ * Generate one MD3 VSCode color-theme pair (light + dark) from a source color.
+ *
+ * One run emits two files (VSCode `uiTheme` is per file, so unlike OpenCode
+ * there is no dual-appearance file):
+ *   `md3-{variant}-{hue}-{light|dark}[-high|-reduced]-color-theme.json`
+ * e.g. `md3-expressive-150-dark-color-theme.json`
+ *
+ * Must run with Bun (`bun scripts/generate-vscode-theme.mjs ...`):
+ * plain Node cannot resolve `@material/material-color-utilities`
+ * extensionless ESM imports.
+ *
+ * Usage:
+ *   bun scripts/generate-vscode-theme.mjs --variant Expressive --source '#068f12' --out ./themes [--contrast default|high|reduced] [--spec 2025|2021]
+ *   bun scripts/generate-vscode-theme.mjs --variant Expressive --hue 150 --chroma 75 --tone 50 --out ./themes [...]
+ * (--hue derives the source via HCT and names the file by hue number;
+ * monochrome only uses hue 0.)
+ */
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { Hct } from '@material/material-color-utilities';
+import { calculateContrastRatio, createTheme, formatHex, MaterialContrastLevel, MaterialVariant } from '@sandlada/mcu-helper';
+import { VSCODE_COLOR_KEYS, VSCODE_SEMANTIC_KEYS, VSCODE_TOKEN_RULES, VSCODE_TOKEN_RULE_KEYS } from '../src/vscode-schema.js';
+import { resolveVscodeMapping } from '../src/vscode-mapping.js';
+
+const VARIANTS = Object.freeze({
+    Monochrome: MaterialVariant.Monochrome,
+    Neutral: MaterialVariant.Neutral,
+    TonalSpot: MaterialVariant.TonalSpot,
+    Vibrant: MaterialVariant.Vibrant,
+    Expressive: MaterialVariant.Expressive,
+    Fidelity: MaterialVariant.Fidelity,
+    Content: MaterialVariant.Content,
+    Rainbow: MaterialVariant.Rainbow,
+    FruitSalad: MaterialVariant.FruitSalad
+});
+
+/** PascalCase variant -> kebab-case filename segment. */
+const VARIANT_SLUGS = Object.freeze({
+    Monochrome: 'monochrome',
+    Neutral: 'neutral',
+    TonalSpot: 'tonal-spot',
+    Vibrant: 'vibrant',
+    Expressive: 'expressive',
+    Fidelity: 'fidelity',
+    Content: 'content',
+    Rainbow: 'rainbow',
+    FruitSalad: 'fruit-salad'
+});
+
+// Suffix '' = default contrast (no suffix in the theme name).
+const CONTRASTS = Object.freeze({
+    default: { level: MaterialContrastLevel.Default, slug: '', group: 'default', textFloor: 4.5 },
+    // Reduced is a soft low-contrast aesthetic by design: WCAG large-text
+    // floor (3.0) instead of body-text floor (4.5).
+    reduced: { level: MaterialContrastLevel.Reduced, slug: '-reduced', group: 'reduced', textFloor: 3.0 },
+    high: { level: MaterialContrastLevel.High, slug: '-high', group: 'high', textFloor: 4.5 }
+});
+
+const APPEARANCES = Object.freeze([
+    { name: 'light', label: 'Light', uiTheme: 'vs' },
+    { name: 'dark', label: 'Dark', uiTheme: 'vs-dark' }
+]);
+
+function fail(message) {
+    console.error(`error: ${message}`);
+    process.exit(1);
+}
+
+function parseArgs(argv) {
+    const args = { contrast: 'default', spec: '2025', chroma: '75', tone: '50' };
+    for (let i = 0; i < argv.length; i += 1) {
+        const flag = argv[i];
+        const value = argv[i + 1];
+        if (value === undefined || value.startsWith('--')) fail(`missing value for ${flag}`);
+        if (flag === '--variant') args.variant = value;
+        else if (flag === '--source') args.source = value;
+        else if (flag === '--hue') args.hue = value;
+        else if (flag === '--chroma') args.chroma = value;
+        else if (flag === '--tone') args.tone = value;
+        else if (flag === '--out') args.out = value;
+        else if (flag === '--contrast') args.contrast = value;
+        else if (flag === '--spec') args.spec = value;
+        else fail(`unknown flag ${flag}`);
+        i += 1;
+    }
+    if (!args.variant) fail('--variant is required');
+    if (!args.out) fail('--out is required');
+    if (!(args.variant in VARIANTS)) fail(`unknown variant '${args.variant}' (expected ${Object.keys(VARIANTS).join('|')})`);
+    if (args.source !== undefined && args.hue !== undefined) fail('--source and --hue are mutually exclusive');
+    if (args.source === undefined && args.hue === undefined) fail('one of --source or --hue is required');
+    if (args.source !== undefined && !/^#[0-9a-f]{6}$/.test(args.source)) {
+        fail(`--source must be lowercase '#rrggbb', got '${args.source}'`);
+    }
+    if (args.hue !== undefined) {
+        args.hue = Number(args.hue);
+        args.chroma = Number(args.chroma);
+        args.tone = Number(args.tone);
+        if (!Number.isInteger(args.hue) || args.hue < 0 || args.hue > 360) fail(`--hue must be an integer 0-360, got '${args.hue}'`);
+        if (!(args.chroma >= 0 && args.chroma <= 150)) fail(`--chroma must be 0-150, got '${args.chroma}'`);
+        if (!(args.tone >= 0 && args.tone <= 100)) fail(`--tone must be 0-100, got '${args.tone}'`);
+        // Fixed-C/T hue source; HCT clamps out-of-gamut hues deterministically.
+        args.source = formatHex(Hct.from(args.hue, args.chroma, args.tone).toInt());
+    }
+    if (!(args.contrast in CONTRASTS)) fail(`unknown contrast '${args.contrast}' (expected default|high|reduced)`);
+    if (args.spec !== '2025' && args.spec !== '2021') fail(`unknown spec '${args.spec}' (expected 2025|2021)`);
+    return args;
+}
+
+/** Resolve one mapping value to static hex (`{ role, alpha }` appends alpha). */
+function toHex(appearance, value) {
+    if (typeof value === 'string') {
+        if (!(value in appearance)) fail(`mapping role '${value}' missing from generated scheme`);
+        return formatHex(appearance[value]);
+    }
+    if (!(value.role in appearance)) fail(`mapping role '${value.role}' missing from generated scheme`);
+    return `${formatHex(appearance[value.role])}${value.alpha}`;
+}
+
+// Foreground/background pairs checked by the contrast guard. Each pair is
+// [foreground ID, background ID or 'editor' (== editor.background)].
+const TEXT_PAIRS = Object.freeze([
+    ['editor.foreground', 'editor'],
+    ['foreground', 'editor'],
+    ['descriptionForeground', 'editor'],
+    ['errorForeground', 'editor'],
+    ['icon.foreground', 'editor'],
+    ['textLink.foreground', 'editor'],
+    ['editorError.foreground', 'editor'],
+    ['editorInfo.foreground', 'editor'],
+    ['editorLineNumber.activeForeground', 'editor'],
+    ['sideBar.foreground', 'sideBar.background'],
+    ['sideBarTitle.foreground', 'sideBar.background'],
+    ['sideBarSectionHeader.foreground', 'sideBarSectionHeader.background'],
+    ['activityBar.foreground', 'activityBar.background'],
+    ['activityBar.inactiveForeground', 'activityBar.background'],
+    ['activityBarBadge.foreground', 'activityBarBadge.background'],
+    ['tab.activeForeground', 'tab.activeBackground'],
+    ['tab.inactiveForeground', 'tab.inactiveBackground'],
+    ['statusBar.foreground', 'statusBar.background'],
+    ['statusBar.debuggingForeground', 'statusBar.debuggingBackground'],
+    ['titleBar.activeForeground', 'titleBar.activeBackground'],
+    ['titleBar.inactiveForeground', 'titleBar.inactiveBackground'],
+    ['panelTitle.activeForeground', 'panel.background'],
+    ['panelTitle.inactiveForeground', 'panel.background'],
+    ['input.foreground', 'input.background'],
+    ['dropdown.foreground', 'dropdown.background'],
+    ['button.foreground', 'button.background'],
+    ['button.secondaryForeground', 'button.secondaryBackground'],
+    ['badge.foreground', 'badge.background'],
+    ['list.activeSelectionForeground', 'list.activeSelectionBackground'],
+    ['list.inactiveSelectionForeground', 'list.inactiveSelectionBackground'],
+    ['list.hoverForeground', 'list.hoverBackground'],
+    ['list.highlightForeground', 'editor'],
+    ['list.errorForeground', 'editor'],
+    ['list.warningForeground', 'editor'],
+    ['quickInput.foreground', 'quickInput.background'],
+    ['notifications.foreground', 'notifications.background'],
+    ['terminal.foreground', 'terminal.background'],
+    ['terminal.foreground', 'terminal.selectionBackground'],
+    ['editor.foreground', 'editor.inactiveSelectionBackground'],
+    ['menu.foreground', 'menu.background'],
+    ['menu.selectionForeground', 'menu.selectionBackground'],
+    ['gitDecoration.addedResourceForeground', 'editor'],
+    ['gitDecoration.modifiedResourceForeground', 'editor'],
+    ['gitDecoration.deletedResourceForeground', 'editor'],
+    ['gitDecoration.untrackedResourceForeground', 'editor']
+]);
+
+const MUTED_PAIRS = Object.freeze([
+    ['input.placeholderForeground', 'input.background'],
+    ['editorLineNumber.foreground', 'editor']
+]);
+
+/** Token rules checked at the muted (3.0) floor instead of the text floor. */
+const MUTED_TOKEN_RULES = Object.freeze(['comment', 'markdownQuote']);
+
+// Blended-selection checks: [foreground ID, wash ID, underlying background
+// ID]. Blending is an sRGB lerp approximation. Floor is 3.0 (transient
+// highlight text, user-accepted): these pairs probe measured ranges like
+// 3.97-8.51 and only fail closed on real disasters.
+const BLEND_PAIRS = Object.freeze([
+    ['editor.foreground', 'editor.selectionBackground', 'editor.background'],
+    ['editor.foreground', 'editor.inactiveSelectionBackground', 'editor.background'],
+    ['list.activeSelectionForeground', 'list.activeSelectionBackground', 'sideBar.background'],
+    ['terminal.foreground', 'terminal.selectionBackground', 'terminal.background']
+]);
+
+function hexToRgb(hex) {
+    return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+function blendInt(fgInt, bgInt, alphaHex) {
+    const a = parseInt(alphaHex, 16) / 255;
+    const f = [(fgInt >> 16) & 255, (fgInt >> 8) & 255, fgInt & 255];
+    const b = [(bgInt >> 16) & 255, (bgInt >> 8) & 255, bgInt & 255];
+    const mixed = f.map((v, i) => Math.round(v * a + b[i] * (1 - a)));
+    return (255 << 24) | (mixed[0] << 16) | (mixed[1] << 8) | mixed[2];
+}
+
+/**
+ * Fail closed when any mapped foreground is unreadable on its background.
+ * Translucent washes (`{ role, alpha }`) are verified by construction
+ * (neutral/tinted role + editor foreground shining through) and skipped.
+ */
+function guardContrast(appearance, mapping, label, textFloor) {
+    const violations = [];
+    // NOTE: calculateContrastRatio takes ARGB ints (as stored in the
+    // scheme), not hex strings.
+    const intOf = (id) => {
+        if (id === 'editor') return appearance[mapping.colors['editor.background']];
+        const value = mapping.colors[id];
+        if (typeof value !== 'string') return null;
+        return appearance[value];
+    };
+    const check = (fgInt, bgInt, floor, tier, what) => {
+        if (fgInt === null || bgInt === null) return;
+        const ratio = calculateContrastRatio(fgInt, bgInt);
+        if (ratio < floor) violations.push(`${tier} ${what} ratio ${ratio.toFixed(2)} < ${floor}`);
+    };
+    for (const [fg, bg] of TEXT_PAIRS) check(intOf(fg), intOf(bg), textFloor, 'text', `${fg} on ${bg}`);
+    for (const [fg, bg] of MUTED_PAIRS) check(intOf(fg), intOf(bg), 3.0, 'muted', `${fg} on ${bg}`);
+    for (const [fg, wash, bg] of BLEND_PAIRS) {
+        const washValue = mapping.colors[wash];
+        if (typeof washValue === 'string') continue;
+        check(intOf(fg), blendInt(appearance[washValue.role], intOf(bg), washValue.alpha), 3.0, 'blend', `${fg} on ${wash} over ${bg}`);
+    }
+    const surface = appearance[mapping.colors['editor.background']];
+    for (const rule of VSCODE_TOKEN_RULES) {
+        const floor = MUTED_TOKEN_RULES.includes(rule.key) ? 3.0 : textFloor;
+        check(appearance[mapping.tokenRoles[rule.key]], surface, floor, MUTED_TOKEN_RULES.includes(rule.key) ? 'muted' : 'text', `token ${rule.key}`);
+    }
+    // Tokens keep their colors inside the selection (no selectionForeground
+    // override), so every token must also read on the selection background.
+    // The selection step is opaque, hence direct ints (no blending).
+    const selection = appearance[mapping.colors['editor.selectionBackground']];
+    if (typeof mapping.colors['editor.selectionBackground'] === 'string') {
+        check(appearance[mapping.colors['editor.foreground']], selection, textFloor, 'text', 'editor.foreground on editor.selectionBackground');
+        for (const rule of VSCODE_TOKEN_RULES) {
+            const floor = MUTED_TOKEN_RULES.includes(rule.key) ? 3.0 : textFloor;
+            check(appearance[mapping.tokenRoles[rule.key]], selection, floor, 'selection', `token ${rule.key} on selection`);
+        }
+    }
+    if (violations.length > 0) {
+        fail(`unreadable ${label} mapping (override in src/vscode-mapping.js):\n  ${violations.join('\n  ')}`);
+    }
+}
+
+/** Build one VSCode color-theme file object for a single appearance. */
+function buildThemeFile(name, appearance, mapping) {
+    const colors = {};
+    for (const key of VSCODE_COLOR_KEYS) colors[key] = toHex(appearance, mapping.colors[key]);
+    const tokenColors = VSCODE_TOKEN_RULES.map((rule) => {
+        const settings = { foreground: formatHex(appearance[mapping.tokenRoles[rule.key]]) };
+        if (rule.fontStyle !== '') settings.fontStyle = rule.fontStyle;
+        return { name: rule.key, scope: rule.scopes, settings };
+    });
+    const semanticTokenColors = {};
+    for (const key of VSCODE_SEMANTIC_KEYS) semanticTokenColors[key] = formatHex(appearance[mapping.semanticRoles[key]]);
+    return {
+        $schema: 'vscode://schemas/color-theme',
+        name,
+        colors,
+        tokenColors,
+        semanticHighlighting: true,
+        semanticTokenColors
+    };
+}
+
+async function main() {
+    const args = parseArgs(process.argv.slice(2));
+    const contrast = CONTRASTS[args.contrast];
+    // Each resolved (appearance, contrast group) mapping must cover the
+    // schema exactly: no missing key, no extra key.
+    for (const { name } of APPEARANCES) {
+        const mapping = resolveVscodeMapping(name, contrast.group, args.variant);
+        const missing = VSCODE_COLOR_KEYS.filter((k) => !(k in mapping.colors));
+        const extra = Object.keys(mapping.colors).filter((k) => !VSCODE_COLOR_KEYS.includes(k));
+        const tMissing = VSCODE_TOKEN_RULE_KEYS.filter((k) => !(k in mapping.tokenRoles));
+        const tExtra = Object.keys(mapping.tokenRoles).filter((k) => !VSCODE_TOKEN_RULE_KEYS.includes(k));
+        const sMissing = VSCODE_SEMANTIC_KEYS.filter((k) => !(k in mapping.semanticRoles));
+        if (missing.length > 0 || extra.length > 0 || tMissing.length > 0 || tExtra.length > 0 || sMissing.length > 0) {
+            fail(`${name} mapping/schema drift (colors missing: ${missing.join(',') || 'none'}; extra: ${extra.join(',') || 'none'}; tokens missing: ${tMissing.join(',') || 'none'}; extra: ${tExtra.join(',') || 'none'}; semantic missing: ${sMissing.join(',') || 'none'})`);
+        }
+    }
+
+    const slug = args.hue === undefined
+        ? `md3-${VARIANT_SLUGS[args.variant]}-${args.source}`
+        : `md3-${VARIANT_SLUGS[args.variant]}-${args.hue}`;
+    if (args.hue !== undefined) console.log(`hue ${args.hue} (C${args.chroma} T${args.tone}) -> source ${args.source}`);
+    await mkdir(args.out, { recursive: true });
+    const scheme = createTheme({
+        variant: VARIANTS[args.variant],
+        contrastLevel: contrast.level,
+        specVersion: args.spec,
+        platform: 'phone',
+        oled: false
+    })(args.source);
+    for (const { name, label } of APPEARANCES) {
+        const mapping = resolveVscodeMapping(name, contrast.group, args.variant);
+        const stem = `${slug}-${name}${contrast.slug}`;
+        const themeName = `MD3 ${args.variant} ${args.hue === undefined ? args.source : args.hue} ${label}${contrast.slug === '' ? '' : contrast.slug === '-high' ? ' High' : ' Reduced'}`;
+        guardContrast(scheme[name], mapping, `${stem} (${name})`, contrast.textFloor);
+        const outFile = join(args.out, `${stem}-color-theme.json`);
+        await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[name], mapping), null, 2)}\n`, 'utf8');
+        console.log(`wrote ${outFile}`);
+    }
+}
+
+await main();
