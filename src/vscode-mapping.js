@@ -183,7 +183,12 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'textLink.activeForeground': 'primary',
     'textBlockQuote.background': 'surfaceContainerHigh',
     'textBlockQuote.border': 'outlineVariant',
-    'textCodeBlock.background': 'surfaceContainerHigh',
+    // Code blocks sit directly on the editor surface: `surfaceContainerLowest`
+    // (one step below `surface`) instead of `surfaceContainerHigh` — High
+    // reads as a saturated tint box in vivid variants (e.g. Expressive).
+    // NOTE: on OLED dark the editor is already `#000000`, so the block
+    // boundary disappears there and only token colors mark code spans.
+    'textCodeBlock.background': 'surfaceContainerLowest',
     // Menus (context/right-click): surface body, subtle border, neutral
     // selection step shared with list selection
     'menu.background': 'surface',
@@ -287,7 +292,12 @@ export const VSCODE_TOKEN_BASE = Object.freeze({
     function: 'primary',
     type: 'secondary',
     variable: 'tertiary',
-    property: 'tertiary',
+    // JSON keys / CSS properties / HTML attributes / Python dict keys.
+    // Must differ from `string` (keys and string values would be one wash:
+    // both were `tertiary`). `primary` mirrors Dark+ accent-keys semantics;
+    // grammar scope is `string.json support.type.property-name.json`, so the
+    // longer `support.type.property-name` selector keeps winning over `string`.
+    property: 'primary',
     tag: 'secondary',
     interpolation: 'secondary',
     markupHeading: 'primary',
@@ -298,6 +308,10 @@ export const VSCODE_TOKEN_BASE = Object.freeze({
     markupChanged: 'secondary',
     markdownRaw: 'tertiary',
     markdownQuote: 'outline',
+    // Link URLs (`markup.underline.link.markdown`, incl. autolinks): accent
+    // + underline, mirroring `dark_vs.json` underline semantics and the
+    // `textLink` workbench color. Without this they fall back to editor fg.
+    link: 'primary',
     diffHeader: 'secondary',
     invalid: 'error'
 });
@@ -328,21 +342,47 @@ export const VSCODE_TOKEN_MONOCHROME = Object.freeze({
 });
 
 /**
+ * Per-(variant, appearance) `property` (JSON keys, CSS props, ...) overrides.
+ *
+ * No single role separates keys from strings AND editor foreground across
+ * variants (measured @hue150, RGB distance; contrast all >= 4.5):
+ * - `primary` is near-`onSurface` in Expressive dark (22) and collides
+ *   nowhere else as badly, but washes out where it matters most;
+ * - `secondary` collides with `tertiary` strings in Expressive (36/45);
+ * - pastel variants (TonalSpot/Neutral light) collide under every text role.
+ * Winners below maximize min(dist to fg, dist to strings); residuals
+ * (Neutral/TonalSpot light) are documented, not solvable with text roles.
+ * Key: `${variantName}:${appearance}` (PascalCase variant, as passed in).
+ */
+export const VSCODE_TOKEN_PROPERTY_TWEAKS = Object.freeze({
+    'Monochrome:light': { property: 'secondary' },
+    'Neutral:dark': { property: 'secondary' },
+    'Neutral:light': { property: 'onSurfaceVariant' },
+    'TonalSpot:dark': { property: 'onSurfaceVariant' },
+    'TonalSpot:light': { property: 'onSurfaceVariant' },
+    'Vibrant:light': { property: 'onSurfaceVariant' },
+    'Expressive:dark': { property: 'onSurfaceVariant' },
+    'Expressive:light': { property: 'onSurfaceVariant' }
+});
+
+/**
+ * UI-only v2: emitted files contain only workbench `colors` + `tokenColors: []`.
+ * Token/semantic constants below are LEGACY (retained for a future syntax pass,
+ * not emitted, not contrast-guarded).
+ *
  * @param {VscodeAppearance} appearance
  * @param {VscodeContrastGroup} contrastGroup
  * @param {string} variantName PascalCase MCU variant name (`Monochrome`, …)
  * @returns {{ colors: Record<string, VscodeColorValue>, tokenRoles: VscodeTokenMap, semanticRoles: VscodeSemanticMap }}
- *   one resolved map per emitted file. Semantic roles track their TextMate
- *   counterparts by construction (`stringLiteral` == `string`,
- *   `numberLiteral` == `number`, `customLiteral` == `function`,
- *   `newOperator` == `keywordControl`).
+ *   one resolved map per emitted file (token/semantic maps unused by generator).
  */
 export function resolveVscodeMapping(appearance, contrastGroup, variantName) {
     const monoColor = variantName === 'Monochrome' ? VSCODE_COLOR_MONOCHROME : {};
     const monoToken = variantName === 'Monochrome' ? VSCODE_TOKEN_MONOCHROME : {};
+    const propTweak = VSCODE_TOKEN_PROPERTY_TWEAKS[`${variantName}:${appearance}`] ?? {};
     const modeWash = appearance === 'light' ? VSCODE_COLOR_LIGHT_STD : VSCODE_COLOR_DARK_STD;
     if (contrastGroup === 'high') {
-        const tokenRoles = Object.freeze({ ...VSCODE_TOKEN_BASE, ...VSCODE_TOKEN_HIGH, ...monoToken });
+        const tokenRoles = Object.freeze({ ...VSCODE_TOKEN_BASE, ...VSCODE_TOKEN_HIGH, ...monoToken, ...propTweak });
         return {
             colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...VSCODE_COLOR_HIGH, ...monoColor }),
             tokenRoles,
@@ -355,8 +395,8 @@ export function resolveVscodeMapping(appearance, contrastGroup, variantName) {
         };
     }
     const tokenRoles = contrastGroup === 'reduced'
-        ? Object.freeze({ ...VSCODE_TOKEN_BASE, ...VSCODE_TOKEN_REDUCED, ...monoToken })
-        : Object.freeze({ ...VSCODE_TOKEN_BASE, ...monoToken });
+        ? Object.freeze({ ...VSCODE_TOKEN_BASE, ...VSCODE_TOKEN_REDUCED, ...monoToken, ...propTweak })
+        : Object.freeze({ ...VSCODE_TOKEN_BASE, ...monoToken, ...propTweak });
     const reducedColor = contrastGroup === 'reduced' ? VSCODE_COLOR_REDUCED : {};
     return {
         colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...VSCODE_COLOR_STD, ...modeWash, ...reducedColor, ...monoColor }),

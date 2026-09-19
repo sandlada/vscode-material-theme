@@ -55,7 +55,8 @@ Keeps for VSCode:
   `vibrant`, `expressive`, `fidelity`, `content`, `rainbow`,
   `fruit-salad`); HCT hue sources; contrast suffix semantics (`''` =
   default, `-high` = `contrastLevel: 1`, `-reduced` = `-1`); OLED
-  semantics (dark-only pitch-black; light half identical to plain).
+  semantics (dark OLED is pitch-black; light OLED is hex-identical to
+  plain light by construction).
 - Hard lessons from `src/md3-mapping.js`: `*Container`/`on*Container`
   pair roles are variant roulette (flip across modes, contrast levels,
   and variants; high contrast turns every `on*Container` into a
@@ -125,8 +126,10 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
   `fruit-salad`, else lowercase); `{hue}` is the HCT hue number (`0-330`
   step `30`; `monochrome` only ships hue `0`).
 - `{appearance}` is `light` (`uiTheme: vs`) or `dark` (`uiTheme: vs-dark`).
-  `oled` only applies to `dark` files (pitch-black dark; the `light` half
-  of the old dual file becomes the plain `light` file by construction).
+  `oled` ships for both appearances (`...-{light|dark}-oled-...`): the
+  dark file is pitch-black, the light file is hex-identical to the plain
+  light file by construction (`mcu-helper` resolves OLED only against
+  the dark scheme; verified 0 token diffs on light).
 - Matrix sources stay fixed HCT `C75 T50` (`Hct.from(hue, 75, 50)`).
   One-off hex sources use
   `md3-{variant}-{#hex}-{appearance}[-oled][-high|-reduced]-color-theme.json`
@@ -148,9 +151,10 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
 1. `src/vscode-schema.js` — DONE (v1 source of truth): 138 workbench
    color IDs (curated from `dark_modern.json`/`dark_vs.json`, incl. 6
    `menu.*` IDs so context menus use `surface` + `outlineVariant`
-   border instead of the neutral fallback) + 25
+   border instead of the neutral fallback) + 26
    TextMate rules (scopes from `dark_vs.json`/`dark_plus.json`,
-   `fontStyle` fixed here) + 4 semantic tokens (`newOperator`,
+   `fontStyle` fixed here; `link` covers `markup.underline.link.markdown`
+   with `underline`, mirroring `dark_vs.json`) + 4 semantic tokens (`newOperator`,
    `stringLiteral`, `customLiteral`, `numberLiteral`). Every emitted
    file must fill it exactly (fail closed on drift). IDs outside it
    fall back to VSCode defaults at runtime. `src/tui-schema.js` is
@@ -171,7 +175,14 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
    `primary@66` left nearly every token at ~3.3 and comments <3.0;
    opaque `primaryContainer` fails dark outright, e.g. Expressive-dark
    1.02); on neutral, text tokens hold >=4.5 and muted comments >=3.28
-   with token colors surviving inside the selection. Semantic roles track
+   with token colors surviving inside the selection. `property` (JSON keys,
+   CSS props) defaults to `primary` but carries per-variant/appearance
+   tweaks (`VSCODE_TOKEN_PROPERTY_TWEAKS`): no single role separates keys
+   from strings + editor fg everywhere (`primary` is near-`onSurface` in
+   Expressive dark, `secondary` collides with `tertiary` strings in
+   Expressive; pastel variants collide under every text role — measured
+   RGB sweep, 582 cells x 0 contrast failures, residuals documented in
+   mapping). Semantic roles track
    their TextMate counterparts by construction. Verified: exact schema
    coverage x 54 combos (2 appearances x 3 groups x 9 variants), all
    roles in both spec sets, contrast sanity (text 4.5 / muted 3.0) on
@@ -179,13 +190,17 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
    only).
 3. `scripts/generate-vscode-theme.mjs` — DONE (v1 single-run VSCode
    generator; Bun-only, same reason as above). One run emits a light/dark
-   pair (`md3-{variant}-{hue}-{light|dark}[-high|-reduced]-color-theme.json`,
-   `vscode://schemas/color-theme`, static hex only, `oled: false`).
+   pair (`md3-{variant}-{hue}-{light|dark}[-oled][-high|-reduced]-color-theme.json`,
+   `vscode://schemas/color-theme`, static hex only; `--oled` sets
+   `oled: true`, otherwise `oled: false`). The dark OLED file is
+   pitch-black (`background` + `surface` -> `#000000`); the light OLED
+   file is hex-identical to plain light (0 token diffs, verified).
    Fails closed on mapping/schema drift + unknown roles + contrast
    violations (text 4.5, muted 3.0; reduced text 3.0 by design; alpha
    washes verified by construction). Usage:
    `bun scripts/generate-vscode-theme.mjs --variant Expressive --hue 150
-   --out ./themes` (or `--source '#rrggbb'` instead of `--hue`).
+   --out ./themes` (or `--source '#rrggbb'` instead of `--hue`;
+   add `--oled` for the OLED pair).
    `scripts/generate-md3-tokens.mjs` is LEGACY (OpenCode dual-appearance);
    do not run for VSCode output.
 4. `scripts/generate-md3-matrix.mjs --out ./tui` — LEGACY matrix driver
@@ -202,7 +217,8 @@ OpenCode one-file-two-appearances rule cannot carry over. Proposal
   per theme (plus the contrast the filename suffix declares); keep
   spec/platform consistent across all themes. Matrix hue sources are
   `Hct.from(hue, 75, 50)` (single runs may use any `--source` hex).
-- Name suffixes map to opts: `oled` -> `oled: true` (dark file only);
+- Name suffixes map to opts: `oled` -> `oled: true` (dark file is
+  pitch-black; light file hex-identical to plain by construction);
   `-high` / `-reduced` -> `contrastLevel: 1` / `-1`; `''` ->
   `contrastLevel: 0`, no suffix.
 - Never hand-pick colors: every workbench/token/semantic value must come

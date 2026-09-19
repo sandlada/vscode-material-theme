@@ -254,8 +254,9 @@ export const VSCODE_COLOR_KEYS = Object.freeze([
 ]);
 
 /**
- * TextMate token rules (25). Scopes follow `dark_vs.json` + `dark_plus.json`.
- * `fontStyle` is fixed here; `foreground` comes from the mapping.
+ * TextMate token rules (26). LEGACY in UI-only v2: retained for a future
+ * syntax pass, not emitted (`tokenColors: []`). Scopes follow
+ * `dark_vs.json` + `dark_plus.json`.
  */
 export const VSCODE_TOKEN_RULES = Object.freeze([
     { key: 'comment', fontStyle: '', scopes: ['comment'] },
@@ -283,6 +284,9 @@ export const VSCODE_TOKEN_RULES = Object.freeze([
     { key: 'markupChanged', fontStyle: '', scopes: ['markup.changed'] },
     { key: 'markdownRaw', fontStyle: '', scopes: ['markup.inline.raw'] },
     { key: 'markdownQuote', fontStyle: '', scopes: ['punctuation.definition.quote.begin.markdown'] },
+    // URLs (inline, autolink `<http..>`, email): `markup.underline` carries
+    // the underline style in `dark_vs.json`; foreground comes from mapping.
+    { key: 'link', fontStyle: 'underline', scopes: ['markup.underline.link.markdown'] },
     { key: 'diffHeader', fontStyle: '', scopes: ['meta.diff.header'] },
     { key: 'invalid', fontStyle: '', scopes: ['invalid'] }
 ]);
@@ -290,7 +294,7 @@ export const VSCODE_TOKEN_RULES = Object.freeze([
 /** Token rule keys in schema order. */
 export const VSCODE_TOKEN_RULE_KEYS = Object.freeze(VSCODE_TOKEN_RULES.map((r) => r.key));
 
-/** Semantic tokens the theme styles (4, matching `dark_plus.json`). */
+/** Semantic tokens (4). LEGACY in UI-only v2: not emitted. */
 export const VSCODE_SEMANTIC_KEYS = Object.freeze([
     'newOperator',
     'stringLiteral',

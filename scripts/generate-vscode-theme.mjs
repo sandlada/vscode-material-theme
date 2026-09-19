@@ -3,15 +3,22 @@
  *
  * One run emits two files (VSCode `uiTheme` is per file, so unlike OpenCode
  * there is no dual-appearance file):
- *   `md3-{variant}-{hue}-{light|dark}[-high|-reduced]-color-theme.json`
+ *   `md3-{variant}-{hue}-{light|dark}[-oled][-high|-reduced]-color-theme.json`
  * e.g. `md3-expressive-150-dark-color-theme.json`
+ *
+ * `--oled` emits the OLED pair instead of the plain pair: the dark file is
+ * pitch-black (`background` + `surface` -> `#000000`, all other roles
+ * unchanged); the light file is hex-identical to the plain light file by
+ * construction (`mcu-helper` resolves OLED only against the dark scheme),
+ * shipped under its own `-oled` stem so the matrix stays symmetric and
+ * both appearances are selectable in the picker.
  *
  * Must run with Bun (`bun scripts/generate-vscode-theme.mjs ...`):
  * plain Node cannot resolve `@material/material-color-utilities`
  * extensionless ESM imports.
  *
  * Usage:
- *   bun scripts/generate-vscode-theme.mjs --variant Expressive --source '#068f12' --out ./themes [--contrast default|high|reduced] [--spec 2025|2021]
+ *   bun scripts/generate-vscode-theme.mjs --variant Expressive --source '#068f12' --out ./themes [--contrast default|high|reduced] [--spec 2025|2021] [--oled]
  *   bun scripts/generate-vscode-theme.mjs --variant Expressive --hue 150 --chroma 75 --tone 50 --out ./themes [...]
  * (--hue derives the source via HCT and names the file by hue number;
  * monochrome only uses hue 0.)
@@ -20,7 +27,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Hct } from '@material/material-color-utilities';
 import { calculateContrastRatio, createTheme, formatHex, MaterialContrastLevel, MaterialVariant } from '@sandlada/mcu-helper';
-import { VSCODE_COLOR_KEYS, VSCODE_SEMANTIC_KEYS, VSCODE_TOKEN_RULES, VSCODE_TOKEN_RULE_KEYS } from '../src/vscode-schema.js';
+import { VSCODE_COLOR_KEYS } from '../src/vscode-schema.js';
 import { resolveVscodeMapping } from '../src/vscode-mapping.js';
 
 const VARIANTS = Object.freeze({
@@ -68,9 +75,13 @@ function fail(message) {
 }
 
 function parseArgs(argv) {
-    const args = { contrast: 'default', spec: '2025', chroma: '75', tone: '50' };
+    const args = { contrast: 'default', spec: '2025', chroma: '75', tone: '50', oled: false };
     for (let i = 0; i < argv.length; i += 1) {
         const flag = argv[i];
+        if (flag === '--oled') {
+            args.oled = true;
+            continue;
+        }
         const value = argv[i + 1];
         if (value === undefined || value.startsWith('--')) fail(`missing value for ${flag}`);
         if (flag === '--variant') args.variant = value;
@@ -172,9 +183,6 @@ const MUTED_PAIRS = Object.freeze([
     ['editorLineNumber.foreground', 'editor']
 ]);
 
-/** Token rules checked at the muted (3.0) floor instead of the text floor. */
-const MUTED_TOKEN_RULES = Object.freeze(['comment', 'markdownQuote']);
-
 // Blended-selection checks: [foreground ID, wash ID, underlying background
 // ID]. Blending is an sRGB lerp approximation. Floor is 3.0 (transient
 // highlight text, user-accepted): these pairs probe measured ranges like
@@ -225,45 +233,23 @@ function guardContrast(appearance, mapping, label, textFloor) {
         if (typeof washValue === 'string') continue;
         check(intOf(fg), blendInt(appearance[washValue.role], intOf(bg), washValue.alpha), 3.0, 'blend', `${fg} on ${wash} over ${bg}`);
     }
-    const surface = appearance[mapping.colors['editor.background']];
-    for (const rule of VSCODE_TOKEN_RULES) {
-        const floor = MUTED_TOKEN_RULES.includes(rule.key) ? 3.0 : textFloor;
-        check(appearance[mapping.tokenRoles[rule.key]], surface, floor, MUTED_TOKEN_RULES.includes(rule.key) ? 'muted' : 'text', `token ${rule.key}`);
-    }
-    // Tokens keep their colors inside the selection (no selectionForeground
-    // override), so every token must also read on the selection background.
-    // The selection step is opaque, hence direct ints (no blending).
-    const selection = appearance[mapping.colors['editor.selectionBackground']];
-    if (typeof mapping.colors['editor.selectionBackground'] === 'string') {
-        check(appearance[mapping.colors['editor.foreground']], selection, textFloor, 'text', 'editor.foreground on editor.selectionBackground');
-        for (const rule of VSCODE_TOKEN_RULES) {
-            const floor = MUTED_TOKEN_RULES.includes(rule.key) ? 3.0 : textFloor;
-            check(appearance[mapping.tokenRoles[rule.key]], selection, floor, 'selection', `token ${rule.key} on selection`);
-        }
-    }
+    // UI-only v2: no token rules emitted (tokenColors: []), so no token
+    // contrast checks. Selection readability is covered by the opaque
+    // editor.foreground check below via BLEND_PAIRS + TEXT_PAIRS.
     if (violations.length > 0) {
         fail(`unreadable ${label} mapping (override in src/vscode-mapping.js):\n  ${violations.join('\n  ')}`);
     }
 }
 
-/** Build one VSCode color-theme file object for a single appearance. */
+/** Build one UI-only VSCode color-theme file object for a single appearance. */
 function buildThemeFile(name, appearance, mapping) {
     const colors = {};
     for (const key of VSCODE_COLOR_KEYS) colors[key] = toHex(appearance, mapping.colors[key]);
-    const tokenColors = VSCODE_TOKEN_RULES.map((rule) => {
-        const settings = { foreground: formatHex(appearance[mapping.tokenRoles[rule.key]]) };
-        if (rule.fontStyle !== '') settings.fontStyle = rule.fontStyle;
-        return { name: rule.key, scope: rule.scopes, settings };
-    });
-    const semanticTokenColors = {};
-    for (const key of VSCODE_SEMANTIC_KEYS) semanticTokenColors[key] = formatHex(appearance[mapping.semanticRoles[key]]);
     return {
         $schema: 'vscode://schemas/color-theme',
         name,
         colors,
-        tokenColors,
-        semanticHighlighting: true,
-        semanticTokenColors
+        tokenColors: []
     };
 }
 
@@ -276,11 +262,8 @@ async function main() {
         const mapping = resolveVscodeMapping(name, contrast.group, args.variant);
         const missing = VSCODE_COLOR_KEYS.filter((k) => !(k in mapping.colors));
         const extra = Object.keys(mapping.colors).filter((k) => !VSCODE_COLOR_KEYS.includes(k));
-        const tMissing = VSCODE_TOKEN_RULE_KEYS.filter((k) => !(k in mapping.tokenRoles));
-        const tExtra = Object.keys(mapping.tokenRoles).filter((k) => !VSCODE_TOKEN_RULE_KEYS.includes(k));
-        const sMissing = VSCODE_SEMANTIC_KEYS.filter((k) => !(k in mapping.semanticRoles));
-        if (missing.length > 0 || extra.length > 0 || tMissing.length > 0 || tExtra.length > 0 || sMissing.length > 0) {
-            fail(`${name} mapping/schema drift (colors missing: ${missing.join(',') || 'none'}; extra: ${extra.join(',') || 'none'}; tokens missing: ${tMissing.join(',') || 'none'}; extra: ${tExtra.join(',') || 'none'}; semantic missing: ${sMissing.join(',') || 'none'})`);
+        if (missing.length > 0 || extra.length > 0) {
+            fail(`${name} mapping/schema drift (colors missing: ${missing.join(',') || 'none'}; extra: ${extra.join(',') || 'none'})`);
         }
     }
 
@@ -294,12 +277,14 @@ async function main() {
         contrastLevel: contrast.level,
         specVersion: args.spec,
         platform: 'phone',
-        oled: false
+        oled: args.oled
     })(args.source);
+    const oledSlug = args.oled ? '-oled' : '';
+    const oledLabel = args.oled ? ' OLED' : '';
     for (const { name, label } of APPEARANCES) {
         const mapping = resolveVscodeMapping(name, contrast.group, args.variant);
-        const stem = `${slug}-${name}${contrast.slug}`;
-        const themeName = `MD3 ${args.variant} ${args.hue === undefined ? args.source : args.hue} ${label}${contrast.slug === '' ? '' : contrast.slug === '-high' ? ' High' : ' Reduced'}`;
+        const stem = `${slug}-${name}${oledSlug}${contrast.slug}`;
+        const themeName = `MD3 ${args.variant} ${args.hue === undefined ? args.source : args.hue} ${label}${oledLabel}${contrast.slug === '' ? '' : contrast.slug === '-high' ? ' High' : ' Reduced'}`;
         guardContrast(scheme[name], mapping, `${stem} (${name})`, contrast.textFloor);
         const outFile = join(args.out, `${stem}-color-theme.json`);
         await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[name], mapping), null, 2)}\n`, 'utf8');

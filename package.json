@@ -41,6 +41,16 @@
         "path": "./themes/md3-expressive-150-dark-color-theme.json"
       },
       {
+        "label": "MD3 Expressive 150 Light OLED",
+        "uiTheme": "vs",
+        "path": "./themes/md3-expressive-150-light-oled-color-theme.json"
+      },
+      {
+        "label": "MD3 Expressive 150 Dark OLED",
+        "uiTheme": "vs-dark",
+        "path": "./themes/md3-expressive-150-dark-oled-color-theme.json"
+      },
+      {
         "label": "MD3 Fidelity 150 Light",
         "uiTheme": "vs",
         "path": "./themes/md3-fidelity-150-light-color-theme.json"
