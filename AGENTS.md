@@ -10,6 +10,10 @@ runtime/dynamic generation.
 Current phase: schema + mapping + single-run + matrix DONE
 (`src/vscode-schema.js`, `src/vscode-mapping.js`,
 `scripts/generate-vscode-theme.mjs`, `scripts/generate-vscode-matrix.mjs`).
+Semantic palette layer DONE (`src/vscode-palette-bank.js` shared bank +
+`src/vscode-semantic-palettes.js`: git diff + problems are fixed palettes,
+not scheme roles) and `scrollbarSlider.*` translucency fix DONE
+(overview-ruler marks must show through the fading scrollbar).
 `themes/` holds the full 291-file default-contrast matrix
 (97 combos x light/dark/dark-oled). `src/tui-schema.js`,
 `src/md3-mapping.js`, `scripts/generate-md3-tokens.mjs`,
@@ -67,6 +71,11 @@ Keeps for VSCode:
   and variants; high contrast turns every `on*Container` into a
   background-matching extreme); washes must be neutral containers, diff
   hue lives in text. Any VSCode mapping needs the same guard pass.
+- Git diff + problem semantics are FIXED palettes (red `30`, amber `60`,
+  green `150`, blue `240`, purple `300`, gray neutral) at frozen tones
+  (`src/vscode-semantic-palettes.js`): meaning must survive every variant,
+  so they are never mapped to DynamicScheme roles. Ruler marks + gutter
+  bars + explorer labels all draw from the same named palettes.
 - Fail-closed habit: schema drift + unknown roles + measured contrast
   violations must abort generation, never ship an unreadable theme.
 
@@ -154,10 +163,12 @@ OpenCode one-file-two-appearances rule cannot carry over:
 
 ## Workflow (order matters; single-run + matrix DONE)
 
-1. `src/vscode-schema.js` — DONE (v1 source of truth): 138 workbench
+1. `src/vscode-schema.js` — DONE (v1 source of truth): 153 workbench
    color IDs (curated from `dark_modern.json`/`dark_vs.json`, incl. 6
    `menu.*` IDs so context menus use `surface` + `outlineVariant`
-   border instead of the neutral fallback) + 26
+   border instead of the neutral fallback, 6
+   `editorOverviewRuler.*` marks, 10 `gitDecoration.*` states, 3
+   `editorGutter.*SecondaryBackground` staged bars) + 26
    TextMate rules (scopes from `dark_vs.json`/`dark_plus.json`,
    `fontStyle` fixed here; `link` covers `markup.underline.link.markdown`
    with `underline`, mirroring `dark_vs.json`) + 4 semantic tokens (`newOperator`,
@@ -167,12 +178,20 @@ OpenCode one-file-two-appearances rule cannot carry over:
    LEGACY (OpenCode 50 `theme.*` keys); do not extend.
 2. `src/vscode-mapping.js` — DONE (v1 source of truth):
    `resolveVscodeMapping(appearance, group, variant)` ->
-   `{ colors, tokenRoles, semanticRoles }` (`BASE` + `STD`/`WASH`/
+   `{ colors, tokenRoles, semanticRoles }` (`BASE` + `WASH`/
    `LIGHT_STD`/`DARK_STD`/`REDUCED`/`HIGH`/`MONOCHROME`, mirroring the
    `src/md3-mapping.js` structure). Reuses the neutral-wash + text-hue
    + container-roulette rules; roles restricted to the 55 roles shared
    by spec `2021`+`2025`; translucent `{ role, alpha }` only where the
-   theme-color reference demands non-opaque. Borders stay `outlineVariant`
+   theme-color reference demands non-opaque, PLUS `scrollbarSlider.*`
+   (`onSurfaceVariant` @ `66`/`99`/`b3`) which must stay translucent:
+   VSCode fades the scrollbar in ABOVE the overview-ruler canvas, so an
+   opaque slider hides git diff / problem marks (user-reported; generator
+   caps alpha at `b3`). Git diff + problem semantics use the third value
+   shape `{ palette, tier, alpha? }` (fixed palettes, NEVER scheme roles —
+   a hue-330 theme must not paint "added" pink; see
+   `src/vscode-semantic-palettes.js`; ruler marks are palette @ `99`).
+   Borders stay `outlineVariant`
    throughout (a `outline` pass on chrome separators was previewed and
    reverted: too heavy, `outline` runs much darker than `outlineVariant`).
    Selection is opaque neutral
@@ -206,7 +225,10 @@ OpenCode one-file-two-appearances rule cannot carry over:
    Picker names are `MD3:{Variant} {hue} {Light|Dark|Dark OLED}`.
    Fails closed on mapping/schema drift + unknown roles + contrast
    violations (text 4.5, muted 3.0; reduced text 3.0 by design; alpha
-   washes verified by construction). Usage:
+   washes verified by construction), on semantic palette tones against the
+   real scheme backgrounds (`src/vscode-semantic-palettes.js`), and on
+   opaque `scrollbarSlider.*` values (alpha <= `b3`, overview-ruler marks
+   must show through). Usage:
    `bun scripts/generate-vscode-theme.mjs --variant Expressive --hue 150
    --out ./themes` (or `--source '#rrggbb'` instead of `--hue`;
    add `--oled` for the dark OLED file).
@@ -239,10 +261,13 @@ OpenCode one-file-two-appearances rule cannot carry over:
   `-high` / `-reduced` -> `contrastLevel: 1` / `-1`; `''` ->
   `contrastLevel: 0`, no suffix.
 - Never hand-pick colors: every workbench/token/semantic value must come
-  from a resolved M3 role map, one resolved map per emitted file.
-  Translucent `{ role, alpha }` values are still role-derived (alpha is a
-  fixed `66` suffix, only where the theme-color reference demands
-  non-opaque).
+  from a resolved M3 role, a tonal palette, or a fixed alpha over one of
+  them (one resolved map per emitted file). Translucent `{ role, alpha }`
+  values are still role-derived (alpha `66` for reference-mandated washes;
+  `66`/`99`/`b3` for `scrollbarSlider.*`, which must stay translucent).
+  Semantic git/problem values are FIXED tonal-palette values
+  (`{ palette, tier, alpha? }`), variant-independent by design; the shared
+  bank lives in `src/vscode-palette-bank.js`.
 
 ## Repo conventions
 

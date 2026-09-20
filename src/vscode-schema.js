@@ -129,8 +129,10 @@ export const VSCODE_TABS_KEYS = Object.freeze([
     'tab.unfocusedActiveBackground'
 ]);
 
-/** Editor core (23). IDs whose reference says "must not be opaque" are
- * emitted translucent by the generator (see mapping `{ role, alpha }`). */
+/** Editor core (26). IDs whose reference says "must not be opaque" are
+ * emitted translucent by the generator (see mapping `{ role, alpha }`).
+ * The three `editorGutter.*SecondaryBackground` IDs are the staged half of
+ * the git gutter bars (VSCode draws primary + secondary when both exist). */
 export const VSCODE_EDITOR_KEYS = Object.freeze([
     'editor.background',
     'editor.foreground',
@@ -154,7 +156,24 @@ export const VSCODE_EDITOR_KEYS = Object.freeze([
     'editorInfo.foreground',
     'editorGutter.addedBackground',
     'editorGutter.modifiedBackground',
-    'editorGutter.deletedBackground'
+    'editorGutter.deletedBackground',
+    'editorGutter.addedSecondaryBackground',
+    'editorGutter.modifiedSecondaryBackground',
+    'editorGutter.deletedSecondaryBackground'
+]);
+
+/** Overview ruler marks (6): scrollbar-strip mirrors of the git diff +
+ * problem states. Fixed-palette derived (never scheme roles, see
+ * `src/vscode-semantic-palettes.js`) and translucent (`99`, mirroring
+ * VSCode's own `hi(gutterColor, .6)`), because the scrollbar slider fades
+ * in ABOVE this canvas — see the `scrollbarSlider.*` mapping note. */
+export const VSCODE_OVERVIEW_RULER_KEYS = Object.freeze([
+    'editorOverviewRuler.addedForeground',
+    'editorOverviewRuler.modifiedForeground',
+    'editorOverviewRuler.deletedForeground',
+    'editorOverviewRuler.errorForeground',
+    'editorOverviewRuler.warningForeground',
+    'editorOverviewRuler.infoForeground'
 ]);
 
 /** Diff editor washes (4). Neutral containers by construction (see
@@ -166,12 +185,20 @@ export const VSCODE_DIFF_KEYS = Object.freeze([
     'diffEditor.removedLineBackground'
 ]);
 
-/** Git decorations (4). The only place diff hue survives as text. */
+/** Git decorations (10). Diff hue lives here as text, from the fixed
+ * semantic palettes (never scheme roles: a hue-330 theme must not paint
+ * "added" pink or "deleted" teal). */
 export const VSCODE_GIT_KEYS = Object.freeze([
     'gitDecoration.addedResourceForeground',
     'gitDecoration.modifiedResourceForeground',
     'gitDecoration.deletedResourceForeground',
-    'gitDecoration.untrackedResourceForeground'
+    'gitDecoration.renamedResourceForeground',
+    'gitDecoration.untrackedResourceForeground',
+    'gitDecoration.ignoredResourceForeground',
+    'gitDecoration.conflictingResourceForeground',
+    'gitDecoration.stageModifiedResourceForeground',
+    'gitDecoration.stageDeletedResourceForeground',
+    'gitDecoration.submoduleResourceForeground'
 ]);
 
 /** Terminal (4). ANSI colors are intentionally out of schema V1 and fall
@@ -233,7 +260,7 @@ export const VSCODE_MENU_KEYS = Object.freeze([
     'menu.border'
 ]);
 
-/** All workbench color IDs every emitted file must fill (138). */
+/** All workbench color IDs every emitted file must fill (153). */
 export const VSCODE_COLOR_KEYS = Object.freeze([
     ...VSCODE_BASE_KEYS,
     ...VSCODE_BUTTON_KEYS,
@@ -244,6 +271,7 @@ export const VSCODE_COLOR_KEYS = Object.freeze([
     ...VSCODE_SIDEBAR_KEYS,
     ...VSCODE_TABS_KEYS,
     ...VSCODE_EDITOR_KEYS,
+    ...VSCODE_OVERVIEW_RULER_KEYS,
     ...VSCODE_DIFF_KEYS,
     ...VSCODE_GIT_KEYS,
     ...VSCODE_TERMINAL_KEYS,

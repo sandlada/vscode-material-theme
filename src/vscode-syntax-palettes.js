@@ -1,15 +1,11 @@
 /**
  * VSCode syntax colors from MD3 tonal palettes (source of truth, v1).
  *
- * Unlike workbench `colors` (which resolve MD3 dynamic-color roles per
- * variant via `src/vscode-mapping.js`), syntax `tokenColors` + semantic
- * tokens resolve DIRECTLY from tonal palettes:
+ * Unlike the variant-dependent workbench chrome (which resolves MD3
+ * dynamic-color roles via `src/vscode-mapping.js`), syntax `tokenColors` +
+ * semantic tokens resolve DIRECTLY from the shared global palette bank
+ * (`src/vscode-palette-bank.js`, tones `0..100` step `10`):
  *
- *   `TonalPalette.fromHueAndChroma(h, 75)` (B+D combo)
- *   `createPaletteTones({ tones: [0..100 step 10] })(palette)`
- *
- * - 12 hues: `0-330` step `30`, chroma fixed `75`.
- * - 11 tones per hue: `0-100` step `10` (132 ARGB ints total).
  * - ONE global bank shared by all 9 variants (syntax hue is
  *   variant-independent by design). Only the ADAPTIVE tone step varies
  *   per emitted file, because backgrounds (`editor.background`,
@@ -17,7 +13,9 @@
  * - `comment` / `markdownQuote` / `operator` use the neutral palette
  *   (`fromHueAndChroma(0, 0)`, grayscale); `operator` stays text floor
  *   (structural, must not disappear), the other two are muted floor.
- * - `markupDeleted` / `invalid` use the fixed error hue (`0`, chroma 75).
+ * - `markupDeleted` / `invalid` use the red family hue (`30`, chroma 75),
+ *   shared with the semantic git `deleted` / error red
+ *   (`src/vscode-semantic-palettes.js`).
  * - Monochrome themes use the same global bank (option A): syntax stays
  *   colorful even when the UI chrome is gray. Documented, not a bug.
  * - Fail closed: unknown rule, unknown appearance/group, or a tone walk
@@ -28,18 +26,12 @@
  * @typedef {'default' | 'reduced' | 'high'} SyntaxContrastGroup
  */
 
-import { TonalPalette } from '@material/material-color-utilities';
-import { calculateContrastRatio, createPaletteTones } from '@sandlada/mcu-helper';
+import { calculateContrastRatio } from '@sandlada/mcu-helper';
+import { PALETTE_CHROMA, PALETTE_HUES, PALETTE_TONES, buildPaletteBank, paletteFloors } from './vscode-palette-bank.js';
 import { VSCODE_SEMANTIC_KEYS, VSCODE_TOKEN_RULE_KEYS } from './vscode-schema.js';
 
-/** 12 palette hues (HCT hue numbers). */
-export const SYNTAX_HUES = Object.freeze([0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]);
-
-/** 11 tones per palette (HCT tone numbers). */
-export const SYNTAX_TONES = Object.freeze([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
-
-/** Fixed chroma for the 12 chromatic palettes. */
-export const SYNTAX_CHROMA = 75;
+/** Bank constants, re-exported under the v1 syntax names (probes). */
+export { PALETTE_CHROMA as SYNTAX_CHROMA, PALETTE_HUES as SYNTAX_HUES, PALETTE_TONES as SYNTAX_TONES, buildPaletteBank };
 
 /**
  * Token rule -> palette hue, or `'neutral'` for the grayscale palette.
@@ -49,7 +41,8 @@ export const SYNTAX_CHROMA = 75;
  *   keys never wash into string values (the old `tertiary` collision).
  * - High-frequency families each own a hue: number 30, constant 60,
  *   type 180, keyword 270, keywordControl 240, function 120, tag 300.
- * - Warm-end hues reserved: 0 = error family only, 330 = regexp only.
+ * - Warm-end hues: 30 = red/error family (`markupDeleted`, `invalid`, the
+ *   semantic git red), 330 = regexp only (hue 0 stays reserved).
  * - Low-drama roles share cool/neutral: variable/markupChanged/diffHeader
  *   follow 210, interpolation follows tag (300), value/raw/inserted follow
  *   string (150), headings/bold/italic follow keyword (270), link follows
@@ -75,13 +68,13 @@ export const SYNTAX_HUE_BY_RULE = Object.freeze({
     markupBold: 270,
     markupItalic: 270,
     markupInserted: 150,
-    markupDeleted: 0,
+    markupDeleted: 30,
     markupChanged: 210,
     markdownRaw: 150,
     markdownQuote: 'neutral',
     link: 240,
     diffHeader: 210,
-    invalid: 0
+    invalid: 30
 });
 
 /** Token rule -> contrast tier (`muted` = 3.0 floor, else text floor). */
@@ -128,35 +121,6 @@ export const SYNTAX_SEMANTIC_SOURCE = Object.freeze({
     customLiteral: 'function',
     numberLiteral: 'number'
 });
-
-let cachedBank = null;
-
-/**
- * Build (once, cached) the global palette bank.
- * @returns {{ bank: Record<number, Record<number, number>>, neutralBank: Record<number, number> }}
- *   hue -> tone -> ARGB int, plus the grayscale neutral bank.
- */
-export function buildPaletteBank() {
-    if (cachedBank) return cachedBank;
-    const getTones = createPaletteTones({ tones: [...SYNTAX_TONES] });
-    const bank = {};
-    for (const hue of SYNTAX_HUES) {
-        bank[hue] = getTones(TonalPalette.fromHueAndChroma(hue, SYNTAX_CHROMA));
-    }
-    const neutralBank = getTones(TonalPalette.fromHueAndChroma(0, 0));
-    cachedBank = { bank, neutralBank };
-    return cachedBank;
-}
-
-/**
- * Text floor per contrast group (reduced is a soft aesthetic by design).
- * Muted floor is always 3.0.
- */
-export function syntaxFloors(contrastGroup) {
-    if (contrastGroup === 'reduced') return Object.freeze({ text: 3.0, muted: 3.0 });
-    if (contrastGroup === 'default' || contrastGroup === 'high') return Object.freeze({ text: 4.5, muted: 3.0 });
-    throw new Error(`unknown contrast group '${contrastGroup}' (expected default|reduced|high)`);
-}
 
 /**
  * Resolve one rule to an ARGB int with an adaptive tone walk.
@@ -206,7 +170,7 @@ export function resolveSyntaxPalettes(appearance, contrastGroup, backgrounds) {
     if (!Array.isArray(backgrounds) || backgrounds.length === 0) {
         throw new Error('resolveSyntaxPalettes requires a non-empty backgrounds array');
     }
-    const floors = syntaxFloors(contrastGroup);
+    const floors = paletteFloors(contrastGroup);
     const { bank, neutralBank } = buildPaletteBank();
     const missing = VSCODE_TOKEN_RULE_KEYS.filter((k) => !(k in SYNTAX_HUE_BY_RULE));
     const extra = Object.keys(SYNTAX_HUE_BY_RULE).filter((k) => !VSCODE_TOKEN_RULE_KEYS.includes(k));

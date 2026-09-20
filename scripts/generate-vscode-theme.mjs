@@ -35,6 +35,7 @@ import { Hct } from '@material/material-color-utilities';
 import { calculateContrastRatio, createTheme, formatHex, MaterialContrastLevel, MaterialVariant } from '@sandlada/mcu-helper';
 import { VSCODE_COLOR_KEYS, VSCODE_SEMANTIC_KEYS, VSCODE_TOKEN_RULES } from '../src/vscode-schema.js';
 import { resolveVscodeMapping } from '../src/vscode-mapping.js';
+import { guardSemanticContrast, resolveSemanticColors } from '../src/vscode-semantic-palettes.js';
 import { resolveSyntaxPalettes, SYNTAX_TIER_BY_RULE } from '../src/vscode-syntax-palettes.js';
 
 const VARIANTS = Object.freeze({
@@ -125,11 +126,22 @@ function parseArgs(argv) {
     return args;
 }
 
-/** Resolve one mapping value to static hex (`{ role, alpha }` appends alpha). */
-function toHex(appearance, value) {
+/**
+ * Resolve one mapping value to static hex. Three shapes:
+ * - role string -> DynamicScheme role hex;
+ * - `{ role, alpha }` -> role hex + alpha suffix;
+ * - `{ palette, tier, alpha? }` -> fixed semantic palette (frozen tone,
+ *   resolved in `semanticInts`) + alpha suffix.
+ */
+function toHex(appearance, key, value, semanticInts) {
     if (typeof value === 'string') {
         if (!(value in appearance)) fail(`mapping role '${value}' missing from generated scheme`);
         return formatHex(appearance[value]);
+    }
+    if (value.palette !== undefined) {
+        const int = semanticInts[key];
+        if (typeof int !== 'number') fail(`semantic palette '${key}' unresolved (no frozen tone for '${value.palette}')`);
+        return `${formatHex(int)}${value.alpha ?? ''}`;
     }
     if (!(value.role in appearance)) fail(`mapping role '${value.role}' missing from generated scheme`);
     return `${formatHex(appearance[value.role])}${value.alpha}`;
@@ -250,6 +262,32 @@ function guardContrast(appearance, mapping, label, textFloor) {
 }
 
 /**
+ * Fail closed when any `scrollbarSlider.*` value is not translucent.
+ *
+ * VSCode fades the scrollbar in ABOVE the overview-ruler canvas
+ * (`.visible` in `scrollbars.css` carries `z-index: 11`), so an opaque
+ * slider hides git diff / problem marks (user-reported defect). VSCode's
+ * own defaults are translucent (`#797979` @ 40%); every state is capped at
+ * alpha `b3` (70%) so >=30% of a mark always bleeds through.
+ */
+const SLIDER_MAX_ALPHA = 0xb3;
+const SLIDER_KEYS = Object.freeze(['scrollbarSlider.background', 'scrollbarSlider.hoverBackground', 'scrollbarSlider.activeBackground']);
+
+function guardSliderTranslucency(mapping, label) {
+    const violations = [];
+    for (const key of SLIDER_KEYS) {
+        const value = mapping.colors[key];
+        const alpha = typeof value === 'object' && value !== null ? value.alpha : undefined;
+        if (typeof value === 'string' || !/^[0-9a-f]{2}$/.test(alpha ?? '') || parseInt(alpha, 16) > SLIDER_MAX_ALPHA) {
+            violations.push(`${key} must be { role, alpha } with alpha <= b3, got ${JSON.stringify(value)}`);
+        }
+    }
+    if (violations.length > 0) {
+        fail(`opaque scrollbar slider in ${label} (overview-ruler marks would be hidden):\n  ${violations.join('\n  ')}`);
+    }
+}
+
+/**
  * Fail closed when any palette syntax color is unreadable on the editor
  * surface or inside the opaque selection steps. This re-verifies (in the
  * generator, against hex-free ARGB ints) what `resolveSyntaxPalettes`
@@ -278,9 +316,9 @@ function guardSyntaxContrast(tokenColors, tokenTones, editorBg, selectionBgs, co
 }
 
 /** Build one VSCode color-theme file object for a single appearance. */
-function buildThemeFile(name, appearance, mapping, syntaxHex) {
+function buildThemeFile(name, appearance, mapping, syntaxHex, semanticInts) {
     const colors = {};
-    for (const key of VSCODE_COLOR_KEYS) colors[key] = toHex(appearance, mapping.colors[key]);
+    for (const key of VSCODE_COLOR_KEYS) colors[key] = toHex(appearance, key, mapping.colors[key], semanticInts);
     const tokenColors = VSCODE_TOKEN_RULES.map((rule) => {
         const setting = { foreground: syntaxHex.tokenColors[rule.key] };
         if (rule.fontStyle) setting.fontStyle = rule.fontStyle;
@@ -300,6 +338,16 @@ function buildThemeFile(name, appearance, mapping, syntaxHex) {
 
 async function emitOne(scheme, appearanceName, stem, themeName, mapping, contrast, args) {
     guardContrast(scheme[appearanceName], mapping, `${stem} (${appearanceName})`, contrast.textFloor);
+    guardSliderTranslucency(mapping, `${stem} (${appearanceName})`);
+    // Semantic (fixed-palette) diff/problem colors: frozen tones resolved
+    // once per file, then re-verified against the real scheme backgrounds.
+    let semanticInts;
+    try {
+        semanticInts = resolveSemanticColors(appearanceName, contrast.group, mapping.colors);
+        guardSemanticContrast(appearanceName, scheme[appearanceName], mapping.colors, semanticInts, contrast.group, `${stem} (${appearanceName})`);
+    } catch (error) {
+        fail(error.message);
+    }
     // Syntax backgrounds mirror the mapping: editor surface + the two
     // opaque neutral selection steps syntax must survive inside of.
     const editorRole = mapping.colors['editor.background'];
@@ -329,7 +377,7 @@ async function emitOne(scheme, appearanceName, stem, themeName, mapping, contras
         }
     }
     const outFile = join(args.out, `${stem}-color-theme.json`);
-    await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[appearanceName], mapping, syntaxHex), null, 2)}\n`, 'utf8');
+    await writeFile(outFile, `${JSON.stringify(buildThemeFile(themeName, scheme[appearanceName], mapping, syntaxHex, semanticInts), null, 2)}\n`, 'utf8');
     console.log(`wrote ${outFile}`);
 }
 

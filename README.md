@@ -40,11 +40,16 @@ absolute GitHub URLs so they render on the Marketplace.
 - 3 appearances per combo: `light` (`uiTheme: vs`), `dark`
   (`uiTheme: vs-dark`), `dark-oled` (`uiTheme: vs-dark`, pitch-black
   editor surface).
-- Full workbench coverage (138 color IDs), 26 TextMate rules, and
+- Full workbench coverage (153 color IDs), 26 TextMate rules, and
   semantic tokens with `semanticHighlighting: true`.
-- Fail-closed generation: schema drift, unknown roles, and contrast
-  violations (text 4.5, muted 3.0; reduced text 3.0 by design) abort
-  instead of shipping an unreadable theme.
+- Git diff + problem colors come from fixed MD3 tonal palettes
+  (green/blue/red/purple/amber/gray), so "added" stays green in every
+  variant instead of following the theme hue; the scrollbar slider stays
+  translucent so overview-ruler marks show through.
+- Fail-closed generation: schema drift, unknown roles, contrast
+  violations (text 4.5, muted 3.0; reduced text 3.0 by design), semantic
+  palette tones, and opaque scrollbar sliders abort instead of shipping
+  an unreadable theme.
 
 Ported from
 [`@sandlada/opencode-material-theme`](https://github.com/sandlada/opencode-material-theme)
@@ -68,7 +73,11 @@ shape (`$schema: vscode://schemas/color-theme`, `colors` +
 `tokenColors` + `semanticTokenColors` with `semanticHighlighting: true`).
 All colors are resolved from MD3 dynamic-color roles
 (`@sandlada/mcu-helper` + `@material/material-color-utilities`,
-`specVersion: '2025'`, `platform: 'phone'`); no hand-picked hex.
+`specVersion: '2025'`, `platform: 'phone'`); no hand-picked hex. Git
+diff and problem semantics are the exception by design: they resolve
+from fixed MD3 tonal palettes at frozen tones
+(`src/vscode-semantic-palettes.js`), so they are identical across all
+291 themes.
 
 ## Theme matrix
 
@@ -213,7 +222,7 @@ commands. Customize appearance per theme via:
   (`src/vscode-schema.js`, `src/vscode-mapping.js`,
   `scripts/generate-vscode-theme.mjs`,
   `scripts/generate-vscode-matrix.mjs`).
-- 138 workbench colors + 26 TextMate rules + 4 semantic tokens per
+- 153 workbench colors + 26 TextMate rules + 4 semantic tokens per
   file, fail-closed on drift and contrast violations.
 
 ## Contributing

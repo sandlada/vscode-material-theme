@@ -1,6 +1,6 @@
 # 编程语言配色（RULE）
 
-规范性规则见 `AGENTS.md` 与 `src/vscode-syntax-palettes.js`；本文件只保留表格。
+规范性规则见 `AGENTS.md`、`src/vscode-syntax-palettes.js` 与 `src/vscode-semantic-palettes.js`；本文件只保留表格。
 
 ## Bank 参数
 
@@ -11,7 +11,7 @@
 | Tones | `0, 10, …, 100`（步长 `10`，11 个） |
 | 总量 | 132 个 ARGB int，全局单例，9 variant 共用 |
 | 中性 bank | `fromHueAndChroma(0, 0)`，只给 `comment`、`markdownQuote`、`operator` |
-| 错误 hue | `0`，只给 `markupDeleted`、`invalid` |
+| 错误 hue | `30`（red family），只给 `markupDeleted`、`invalid`；与语义层 red 共用 |
 
 ## Hue / Tier 分配（26 rules）
 
@@ -36,13 +36,13 @@
 | `markupBold` | 270 | text |
 | `markupItalic` | 270 | text |
 | `markupInserted` | 150 | text |
-| `markupDeleted` | 0 | text |
+| `markupDeleted` | 30 | text |
 | `markupChanged` | 210 | text |
 | `markdownRaw` | 150 | text |
 | `markdownQuote` | neutral | muted |
 | `link` | 240 | text |
 | `diffHeader` | 210 | text |
-| `invalid` | 0 | text |
+| `invalid` | 30 | text |
 
 ## Tone 起点
 
@@ -69,6 +69,35 @@ light 不达标往深走（−10 至 T0），dark 往浅走（+10 至 T100）；
 | `customLiteral` | `function` |
 | `numberLiteral` | `number` |
 
+## 语义 Palette（git diff / problems；不随 variant 变）
+
+来源 `src/vscode-semantic-palettes.js`，bank 与 syntax 共用（`src/vscode-palette-bank.js`，chroma 75；gray = neutral C0）。语义色**禁止**用 DynamicScheme role（hue-330 主题不能把「新增」画成品红）。
+
+| 名称 | HCT hue | 状态 |
+|---|---|---|
+| red | 30 | deleted / conflicting / stageDeleted / error |
+| amber | 60 | warning / stageModified |
+| green | 150 | added / untracked |
+| blue | 240 | modified / info / submodule |
+| purple | 300 | renamed |
+| gray | neutral | ignored（muted tier） |
+
+冻结 tone（`SEMANTIC_TONES`，实测最坏值见 `scripts/probe-semantic-palettes.mjs`）：
+
+| group | light text | light muted | dark text | dark muted |
+|---|---|---|---|---|
+| default | T30 (≥6.8) | T50 (≥3.3) | T70 (≥5.3) | T60 (≥3.9) |
+| high | T30 (≥5.4) | T40 (≥3.8) | T80 (≥5.4) | T70 (≥4.0) |
+| reduced | T30 | T50 | T70 | T60 |
+
+- `editorOverviewRuler.*`（含 error/warning/info）＝ palette 色 + alpha `99`（对应 VSCode `hi(color, .6)`）；`editorGutter.*SecondaryBackground` 同样 `99`，其余 gutter / `gitDecoration.*` 不透明。
+- guard：每个值对 `editor.background` / `sideBar.background` / `list.activeSelectionBackground` / `list.inactiveSelectionBackground` 都要达 floor（text 4.5、muted 3.0、reduced text 3.0），生成时 fail closed。
+- 已验证 `97 combos × 3 contrast × light/dark/dark-oled`（`bun scripts/probe-semantic-palettes.mjs`）：最坏 text 5.33、muted 3.28。
+
+## 滚动条滑块（必须半透明）
+
+`scrollbarSlider.background/hoverBackground/activeBackground` = `onSurfaceVariant` @ alpha `66`/`99`/`b3`。VSCode 的滚动条淡入时在 overview ruler 之上（`.visible` 带 `z-index: 11`），不透明滑块会直接盖掉 git diff / problem 标记（用户回报）；生成器 guard 限制 alpha ≤ `b3`（保留 ≥30% 标记透出）。
+
 ## 已知残留（v1 接受）
 
 | Pair | RGB 距离 | 条件 |
@@ -81,8 +110,11 @@ light 不达标往深走（−10 至 T0），dark 往浅走（+10 至 T100）；
 
 | 文件 | 职责 |
 |---|---|
-| `src/vscode-syntax-palettes.js` | Bank + 上表（source of truth） |
-| `src/vscode-schema.js` | 26 scopes + `fontStyle`（冻结） |
-| `src/vscode-mapping.js` | UI `colors`（token 常量 legacy） |
-| `scripts/generate-vscode-theme.mjs` | 生成 + UI/语法双 guard |
-| `scripts/probe-syntax-palettes.mjs` | 探针（只读） |
+| `src/vscode-palette-bank.js` | 全域 tonal bank（12 hues × 11 tones + neutral） |
+| `src/vscode-syntax-palettes.js` | syntax 的 hue/tier + adaptive tone walk |
+| `src/vscode-semantic-palettes.js` | 語義 palette + 凍結 tone + guard |
+| `src/vscode-schema.js` | 153 workbench IDs + 26 scopes + `fontStyle`（冻结） |
+| `src/vscode-mapping.js` | UI `colors`（role / `{role,alpha}` / `{palette,tier,alpha}`） |
+| `scripts/generate-vscode-theme.mjs` | 生成 + UI/語法/語義/滑塊 guard |
+| `scripts/probe-syntax-palettes.mjs` | syntax 探针（只读） |
+| `scripts/probe-semantic-palettes.mjs` | 語義 探针（只读） |

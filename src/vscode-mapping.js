@@ -5,24 +5,38 @@
  * {@link VSCODE_TOKEN_RULE_KEYS} TextMate rule, and every
  * {@link VSCODE_SEMANTIC_KEYS} semantic token to one Material Design 3
  * dynamic-color role (camelCase, as returned by
- * `createTheme(opts)(source)` `light`/`dark` maps).
+ * `createTheme(opts)(source)` `light`/`dark` maps) or, for git diff +
+ * problem semantics, to one fixed tonal-palette value.
  *
- * Values are either a role string or `{ role, alpha }` (alpha is a 2-digit
- * hex suffix). The alpha form is ONLY for IDs whose theme-color reference
- * says the color "must not be opaque" (annotations shine through:
- * selections, find/hover/range highlights, bracket match, drop
- * backgrounds, diff washes). All other IDs are opaque static hex.
+ * Values are one of three shapes:
+ * - role string — a DynamicScheme role, resolved per variant/appearance
+ *   (all chrome + text);
+ * - `{ role, alpha }` — a translucent role (2-digit hex alpha). The alpha
+ *   form is for IDs whose theme-color reference says the color "must not
+ *   be opaque" (annotations shine through: selections, find/hover/range
+ *   highlights, bracket match, drop backgrounds, diff washes) PLUS the
+ *   `scrollbarSlider.*` trio: VSCode fades the scrollbar in ABOVE the
+ *   overview-ruler canvas (`.visible` carries `z-index: 11`), so an
+ *   opaque slider hides git diff / problem marks (user-reported defect).
+ *   VSCode's own defaults are translucent (`#797979` @ 40% etc.); the
+ *   generator caps sliders at alpha `b3`.
+ * - `{ palette, tier, alpha? }` — a FIXED tonal-palette color
+ *   (`src/vscode-semantic-palettes.js`) for git diff + problem semantics
+ *   only. These must NOT follow the theme hue (a hue-330 theme would paint
+ *   "added" pink), so they resolve from the shared palette bank at frozen
+ *   tones and are identical across all shipped themes.
  *
  * Lessons carried over from `src/md3-mapping.js` (OpenCode-era, kept as
  * the readability reference):
- * - Only symbolic M3 roles, never hand-picked hex. Hues follow the source
- *   color by design (no guaranteed red/green/cyan; ANSI colors stay out
- *   of schema V1 for the same reason).
+ * - Only symbolic M3 roles, never hand-picked hex. Chrome hues follow the
+ *   source color by design (no guaranteed red/green/cyan for chrome —
+ *   which is why git diff + problem semantics use the fixed palette layer
+ *   instead; ANSI colors stay out of schema V1 for the same reason).
  * - `*Container`/`on*Container` pair roles are variant roulette across
  *   modes, contrast levels, and variants; high contrast turns every
- *   `on*Container` into a background-matching extreme. Therefore
- *   `on*Container` foregrounds only appear in the STD group (with HIGH
- *   overrides), never in BASE.
+ *   `on*Container` into a background-matching extreme. `on*Container`
+ *   foregrounds therefore never appear in BASE; the last standard-contrast
+ *   consumers (warning foregrounds) moved to the fixed `amber` palette.
  * - Washes stay neutral (`surfaceContainer*`): vivid variants push
  *   `tertiaryContainer`/`errorContainer` too saturated for washes, and
  *   tinted diff washes failed on some variant. Diff hue survives through
@@ -36,12 +50,18 @@
  *   >=3.28 across variants/modes (6-theme probe), and token colors survive
  *   inside the selection (no `editor.selectionForeground` override). List active/inactive follow
  *   the same Highest/High steps so the two states stay distinct.
+ * - Diff/problem semantics are FIXED palettes, never DynamicScheme roles:
+ *   meaning (added = green, deleted = red, error = red) must survive every
+ *   variant, including Monochrome. Gutter bars + overview ruler marks +
+ *   explorer labels all draw from the same named palettes (red 30,
+ *   amber 60, green 150, blue 240, purple 300, gray neutral); ruler marks
+ *   are the palette color at alpha `99` (VSCode's `hi(gutterColor, .6)`).
  * - Roles are restricted to the 55 roles present in BOTH `specVersion`
  *   `'2021'` and `'2025'` (the 2025-only `*Dim` roles are never used),
  *   so one mapping stays valid across spec versions.
  *
- * @typedef {string | { role: string, alpha: string }} VscodeColorValue
- * @typedef {Record<string, string>} VscodeColorMap workbench ID -> M3 role
+ * @typedef {string | { role: string, alpha: string } | { palette: string, tier: 'text' | 'muted', alpha?: string }} VscodeColorValue
+ * @typedef {Record<string, VscodeColorValue>} VscodeColorMap workbench ID -> M3 role / fixed palette
  * @typedef {Record<string, string>} VscodeTokenMap token rule -> M3 role
  * @typedef {Record<string, string>} VscodeSemanticMap semantic token -> M3 role
  * @typedef {'light' | 'dark'} VscodeAppearance
@@ -55,7 +75,9 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     foreground: 'onSurface',
     disabledForeground: 'outline',
     descriptionForeground: 'onSurfaceVariant',
-    errorForeground: 'error',
+    // Diagnostics text: FIXED red/amber/blue palettes, not scheme roles —
+    // an error must read red in every variant (semantic layer header).
+    errorForeground: { palette: 'red', tier: 'text' },
     'icon.foreground': 'onSurface',
     'widget.border': 'outlineVariant',
     'widget.shadow': 'shadow',
@@ -81,10 +103,13 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'input.border': 'outlineVariant',
     'input.foreground': 'onSurface',
     'input.placeholderForeground': 'onSurfaceVariant',
-    // Scrollbar + badges + progress
-    'scrollbarSlider.background': 'surfaceContainerHighest',
-    'scrollbarSlider.hoverBackground': 'outlineVariant',
-    'scrollbarSlider.activeBackground': 'outline',
+    // Scrollbar slider: MUST stay translucent (generator caps alpha at
+    // `b3`). VSCode fades the scrollbar in ABOVE the overview-ruler canvas,
+    // so an opaque slider hides git diff / problem marks (user-reported
+    // defect); VSCode's own defaults are translucent (`#797979` @ 40%).
+    'scrollbarSlider.background': { role: 'onSurfaceVariant', alpha: '66' },
+    'scrollbarSlider.hoverBackground': { role: 'onSurfaceVariant', alpha: '99' },
+    'scrollbarSlider.activeBackground': { role: 'onSurfaceVariant', alpha: 'b3' },
     'badge.background': 'primary',
     'badge.foreground': 'onPrimary',
     'progressBar.background': 'primary',
@@ -98,7 +123,8 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'list.hoverForeground': 'onSurface',
     'list.focusOutline': 'primary',
     'list.highlightForeground': 'primary',
-    'list.errorForeground': 'error',
+    'list.errorForeground': { palette: 'red', tier: 'text' },
+    'list.warningForeground': { palette: 'amber', tier: 'text' },
     // Activity bar
     'activityBar.background': 'surfaceContainer',
     'activityBar.foreground': 'onSurface',
@@ -139,16 +165,39 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'editorIndentGuide.background': 'outlineVariant',
     'editorIndentGuide.activeBackground': 'outline',
     'editorBracketMatch.border': 'outline',
-    'editorError.foreground': 'error',
-    'editorInfo.foreground': 'secondary',
-    'editorGutter.addedBackground': 'tertiary',
-    'editorGutter.modifiedBackground': 'secondary',
-    'editorGutter.deletedBackground': 'error',
-    // Git decorations (diff hue lives here as text)
-    'gitDecoration.addedResourceForeground': 'tertiary',
-    'gitDecoration.modifiedResourceForeground': 'secondary',
-    'gitDecoration.deletedResourceForeground': 'error',
-    'gitDecoration.untrackedResourceForeground': 'tertiary',
+    // Diagnostics + git gutter bars: FIXED palettes (semantic layer), never
+    // scheme roles; the secondary bars are the staged half (translucent
+    // `99`, like VSCode's own `.5`/`.7` defaults).
+    'editorError.foreground': { palette: 'red', tier: 'text' },
+    'editorWarning.foreground': { palette: 'amber', tier: 'text' },
+    'editorInfo.foreground': { palette: 'blue', tier: 'text' },
+    'editorGutter.addedBackground': { palette: 'green', tier: 'text' },
+    'editorGutter.modifiedBackground': { palette: 'blue', tier: 'text' },
+    'editorGutter.deletedBackground': { palette: 'red', tier: 'text' },
+    'editorGutter.addedSecondaryBackground': { palette: 'green', tier: 'text', alpha: '99' },
+    'editorGutter.modifiedSecondaryBackground': { palette: 'blue', tier: 'text', alpha: '99' },
+    'editorGutter.deletedSecondaryBackground': { palette: 'red', tier: 'text', alpha: '99' },
+    // Overview ruler marks (scrollbar strip): same palette language as the
+    // gutter bars, alpha `99` mirrors VSCode's `hi(gutterColor, .6)`.
+    'editorOverviewRuler.addedForeground': { palette: 'green', tier: 'text', alpha: '99' },
+    'editorOverviewRuler.modifiedForeground': { palette: 'blue', tier: 'text', alpha: '99' },
+    'editorOverviewRuler.deletedForeground': { palette: 'red', tier: 'text', alpha: '99' },
+    'editorOverviewRuler.errorForeground': { palette: 'red', tier: 'text', alpha: '99' },
+    'editorOverviewRuler.warningForeground': { palette: 'amber', tier: 'text', alpha: '99' },
+    'editorOverviewRuler.infoForeground': { palette: 'blue', tier: 'text', alpha: '99' },
+    // Git decorations (explorer labels): one fixed palette per state; states
+    // share palettes where VSCode does (added/untracked green, info/modified
+    // blue, deleted/conflicting/stageDeleted red).
+    'gitDecoration.addedResourceForeground': { palette: 'green', tier: 'text' },
+    'gitDecoration.modifiedResourceForeground': { palette: 'blue', tier: 'text' },
+    'gitDecoration.deletedResourceForeground': { palette: 'red', tier: 'text' },
+    'gitDecoration.renamedResourceForeground': { palette: 'purple', tier: 'text' },
+    'gitDecoration.untrackedResourceForeground': { palette: 'green', tier: 'text' },
+    'gitDecoration.ignoredResourceForeground': { palette: 'gray', tier: 'muted' },
+    'gitDecoration.conflictingResourceForeground': { palette: 'red', tier: 'text' },
+    'gitDecoration.stageModifiedResourceForeground': { palette: 'amber', tier: 'text' },
+    'gitDecoration.stageDeletedResourceForeground': { palette: 'red', tier: 'text' },
+    'gitDecoration.submoduleResourceForeground': { palette: 'blue', tier: 'text' },
     // Terminal
     'terminal.background': 'surfaceContainer',
     'terminal.foreground': 'onSurface',
@@ -197,17 +246,6 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'menu.selectionForeground': 'onSurface',
     'menu.separatorBackground': 'outlineVariant',
     'menu.border': 'outlineVariant'
-});
-
-/**
- * Standard-contrast entries shared by both appearances. `on*Container`
- * foregrounds are only safe at default/reduced contrast; high contrast
- * needs HIGH overrides (every `on*Container` matches the background).
- * (List selection foreground lives in BASE as `onSurface`; see header.)
- */
-export const VSCODE_COLOR_STD = Object.freeze({
-    'list.warningForeground': 'onErrorContainer',
-    'editorWarning.foreground': 'onErrorContainer'
 });
 
 /** Translucent washes + drop feedback (both appearances, all contrasts).
@@ -265,13 +303,11 @@ export const VSCODE_COLOR_MONOCHROME = Object.freeze({
 });
 
 /**
- * High-contrast entries (both appearances). `on*Container` foregrounds
- * match the background here, so they step to bg-safe extremes, while
- * `*Container` diff washes fall back to one neutral step.
+ * High-contrast entries (both appearances). `*Container` diff washes fall
+ * back to one neutral step (the warning foregrounds that used to override
+ * here are fixed-palette `amber` now, see header).
  */
 export const VSCODE_COLOR_HIGH = Object.freeze({
-    'list.warningForeground': 'errorContainer',
-    'editorWarning.foreground': 'errorContainer',
     'diffEditor.insertedTextBackground': { role: 'surfaceContainerHigh', alpha: '66' },
     'diffEditor.removedTextBackground': { role: 'surfaceContainerHigh', alpha: '66' },
     'diffEditor.insertedLineBackground': { role: 'surfaceContainerHigh', alpha: '66' },
@@ -399,7 +435,7 @@ export function resolveVscodeMapping(appearance, contrastGroup, variantName) {
         : Object.freeze({ ...VSCODE_TOKEN_BASE, ...monoToken, ...propTweak });
     const reducedColor = contrastGroup === 'reduced' ? VSCODE_COLOR_REDUCED : {};
     return {
-        colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...VSCODE_COLOR_STD, ...modeWash, ...reducedColor, ...monoColor }),
+        colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...modeWash, ...reducedColor, ...monoColor }),
         tokenRoles,
         semanticRoles: Object.freeze({
             newOperator: tokenRoles.keywordControl,
