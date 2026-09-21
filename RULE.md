@@ -90,9 +90,11 @@ light 不达标往深走（−10 至 T0），dark 往浅走（+10 至 T100）；
 | high | T30 (≥5.4) | T40 (≥3.8) | T80 (≥5.4) | T70 (≥4.0) |
 | reduced | T30 | T50 | T70 | T60 |
 
+diff wash（`tier: 'wash'`，`diffEditor.*Background` 专用，不随 variant 变）：light T90 / dark T30，三组 contrast 共用；`inserted*` green 150、`removed*` red 30，line `@66` / text `@99`。light T90 是全矩阵 syntax 全过的最濃可用淺色（T80 綠-on-綠差 0.06，137 失敗）；dark T30 距離 ≥62 且貼近編輯器底色。
+
 - `editorOverviewRuler.*`（含 error/warning/info）＝ palette 色 + alpha `99`（对应 VSCode `hi(color, .6)`）；`editorGutter.*SecondaryBackground` 同样 `99`，其余 gutter / `gitDecoration.*` 不透明。
-- guard：每个值对 `editor.background` / `sideBar.background` / `list.activeSelectionBackground` / `list.inactiveSelectionBackground` 都要达 floor（text 4.5、muted 3.0、reduced text 3.0），生成时 fail closed。
-- 已验证 `97 combos × 3 contrast × light/dark/dark-oled`（`bun scripts/probe-semantic-palettes.mjs`）：最坏 text 5.33、muted 3.28。
+- guard：text/muted 每个值对 `editor.background` / `sideBar.background` / `list.activeSelectionBackground` / `list.inactiveSelectionBackground` 都要达 floor（text 4.5、muted 3.0、reduced text 3.0）；wash 跳过不透明检查，改由生成器验 blend（`editor.foreground` + 26 syntax 在 `@66`/`@99` blend 上全过，inserted vs removed RGB 距离 ≥40），生成时 fail closed。
+- 已验证 `97 combos × 3 contrast × light/dark/dark-oled`（`bun scripts/probe-semantic-palettes.mjs`）：最坏 text 5.33、muted 3.28；wash blend 最差 fg 5.05、syntax text 5.19 / muted 3.61，最小红绿距离 62。
 
 ## 滚动条滑块（必须半透明）
 

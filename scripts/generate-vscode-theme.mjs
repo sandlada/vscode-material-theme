@@ -35,7 +35,7 @@ import { Hct } from '@material/material-color-utilities';
 import { calculateContrastRatio, createTheme, formatHex, MaterialContrastLevel, MaterialVariant } from '@sandlada/mcu-helper';
 import { VSCODE_COLOR_KEYS, VSCODE_SEMANTIC_KEYS, VSCODE_TOKEN_RULES } from '../src/vscode-schema.js';
 import { resolveVscodeMapping } from '../src/vscode-mapping.js';
-import { guardSemanticContrast, resolveSemanticColors } from '../src/vscode-semantic-palettes.js';
+import { guardSemanticContrast, resolveSemanticColors, SEMANTIC_DIFF_WASH_IDS } from '../src/vscode-semantic-palettes.js';
 import { resolveSyntaxPalettes, SYNTAX_TIER_BY_RULE } from '../src/vscode-syntax-palettes.js';
 
 const VARIANTS = Object.freeze({
@@ -213,6 +213,7 @@ const MUTED_PAIRS = Object.freeze([
 const BLEND_PAIRS = Object.freeze([
     ['editor.foreground', 'editor.selectionBackground', 'editor.background'],
     ['editor.foreground', 'editor.inactiveSelectionBackground', 'editor.background'],
+    ['input.foreground', 'selection.background', 'input.background'],
     ['list.activeSelectionForeground', 'list.activeSelectionBackground', 'sideBar.background'],
     ['terminal.foreground', 'terminal.selectionBackground', 'terminal.background']
 ]);
@@ -319,6 +320,69 @@ function guardSyntaxContrast(tokenColors, tokenTones, editorBg, selectionBgs, co
     }
 }
 
+/**
+ * Fail closed when fixed red/green diff washes hide text.
+ *
+ * Each wash is a translucent palette tint (`{ palette, tier: 'wash', alpha }`)
+ * over `editor.background`. The editor foreground AND every syntax token
+ * must survive on the blend (the diff editor shows code), and inserted vs
+ * removed blends must stay distinguishable (RGB distance floor catches a
+ * gray regression where all four IDs collapse to one neutral).
+ */
+function guardDiffWashContrast({ schemeAppearance, mapping, semanticInts, editorBg, editorFgInt, syntax, contrastGroup, label }) {
+    const textFloor = contrastGroup === 'reduced' ? 3.0 : 4.5;
+    const violations = [];
+    const blends = {};
+    for (const id of SEMANTIC_DIFF_WASH_IDS) {
+        const value = mapping.colors[id];
+        const washArgb = semanticInts[id];
+        if (typeof value !== 'object' || value === null || value.tier !== 'wash' || typeof washArgb !== 'number') {
+            violations.push(`diff wash '${id}' must be { palette, tier: 'wash', alpha }, got ${JSON.stringify(value)}`);
+            continue;
+        }
+        const blended = blendInt(washArgb, editorBg, value.alpha);
+        blends[id] = blended;
+        const fgRatio = calculateContrastRatio(editorFgInt, blended);
+        if (fgRatio < textFloor) {
+            violations.push(`diff wash ${id} (blend) editor.foreground ratio ${fgRatio.toFixed(2)} < ${textFloor}`);
+        }
+        for (const rule of VSCODE_TOKEN_RULES) {
+            const argb = syntax.tokenColors[rule.key];
+            if (argb === undefined) {
+                violations.push(`diff wash ${id} syntax missing rule ${rule.key}`);
+                continue;
+            }
+            const tier = SYNTAX_TIER_BY_RULE[rule.key];
+            const floor = tier === 'muted' ? 3.0 : textFloor;
+            const ratio = calculateContrastRatio(argb, blended);
+            if (ratio < floor) {
+                violations.push(`diff wash ${id} (blend) syntax ${rule.key} ratio ${ratio.toFixed(2)} < ${floor}`);
+                break;
+            }
+        }
+    }
+    const rgbDistance = (a, b) => {
+        const dr = ((a >> 16) & 255) - ((b >> 16) & 255);
+        const dg = ((a >> 8) & 255) - ((b >> 8) & 255);
+        const db = (a & 255) - (b & 255);
+        return Math.sqrt(dr * dr + dg * dg + db * db);
+    };
+    for (const [a, b] of [['diffEditor.insertedLineBackground', 'diffEditor.removedLineBackground'], ['diffEditor.insertedTextBackground', 'diffEditor.removedTextBackground']]) {
+        if (blends[a] !== undefined && blends[b] !== undefined) {
+            const distance = rgbDistance(blends[a], blends[b]);
+            if (distance < 40) {
+                violations.push(`diff wash ${a} vs ${b} distance ${distance.toFixed(0)} < 40 (inserted vs removed indistinguishable)`);
+            }
+        }
+    }
+    // Silence unused-var lint for the resolved scheme half (kept for symmetry
+    // with the other guards): the blend inputs are pre-resolved ints.
+    void schemeAppearance;
+    if (violations.length > 0) {
+        fail(`unreadable ${label} diff washes (retune wash tones in src/vscode-semantic-palettes.js):\n  ${violations.join('\n  ')}`);
+    }
+}
+
 /** Build one VSCode color-theme file object for a single appearance. */
 function buildThemeFile(name, appearance, mapping, syntaxHex, semanticInts) {
     const colors = {};
@@ -369,6 +433,20 @@ async function emitOne(scheme, appearanceName, stem, themeName, mapping, contras
         fail(`${stem} (${appearanceName}) ${error.message}`);
     }
     guardSyntaxContrast(syntax.tokenColors, syntax.tokenTones, editorBg, selectionBgs, contrast.group, `${stem} (${appearanceName})`);
+    const editorFgRole = mapping.colors['editor.foreground'];
+    if (typeof editorFgRole !== 'string') {
+        fail(`editor foreground must be an opaque role string for ${stem} (${appearanceName})`);
+    }
+    guardDiffWashContrast({
+        schemeAppearance: scheme[appearanceName],
+        mapping,
+        semanticInts,
+        editorBg,
+        editorFgInt: scheme[appearanceName][editorFgRole],
+        syntax,
+        contrastGroup: contrast.group,
+        label: `${stem} (${appearanceName})`
+    });
     const syntaxHex = {
         tokenColors: Object.fromEntries(Object.entries(syntax.tokenColors).map(([k, v]) => [k, formatHex(v)])),
         semanticColors: Object.fromEntries(Object.entries(syntax.semanticColors).map(([k, v]) => [k, formatHex(v)]))

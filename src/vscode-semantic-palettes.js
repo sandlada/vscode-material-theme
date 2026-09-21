@@ -15,13 +15,23 @@
  *
  * Frozen tones per appearance / contrast group / tier
  * (probe-measured worst case over the 97-combo matrix against
- * {@link SEMANTIC_BACKGROUND_IDS}):
+ * {@link SEMANTIC_BACKGROUND_IDS} for text/muted; wash tones are
+ * background tints verified by blend, see below):
  *
  * | group   | light text | light muted | dark text  | dark muted |
  * |---------|------------|-------------|------------|------------|
  * | default | T30 >= 6.8 | T50 >= 3.3  | T70 >= 5.3 | T60 >= 3.9 |
  * | high    | T30 >= 5.4 | T40 >= 3.8  | T80 >= 5.4 | T70 >= 4.0 |
  * | reduced | T30        | T50         | T70        | T60        |
+ *
+ * Diff washes (`tier: 'wash'`, `diffEditor.*Background` only) are a third
+ * tier with frozen tones per appearance, identical across contrast groups:
+ * light T90 / dark T30. Light T90 is the palest tone whose `@66` + `@99`
+ * blends keep every syntax token >= 4.5 (T80 fails green-on-green by 0.06,
+ * 137 matrix failures); dark T30 keeps fg + syntax >= 4.5 with inserted vs
+ * removed distance >= 62 while staying close to the editor surface (subtle
+ * dark tints; T20 collapses to distance 44). Verified by full-matrix blend
+ * probe (fg + all 26 syntax rules on both alphas, incl. dark-oled).
  *
  * (reduced keeps the default tones: only the floors drop to 3.0, exactly
  * like the syntax bank's reduced rule.) FROZEN by design: a semantic color
@@ -35,7 +45,7 @@
  * checks the OPAQUE tone, which is the stricter test.
  *
  * @typedef {'light' | 'dark'} SemanticAppearance
- * @typedef {'text' | 'muted'} SemanticTier
+ * @typedef {'text' | 'muted' | 'wash'} SemanticTier
  * @typedef {{ palette: string, tier: SemanticTier, alpha?: string }} SemanticColorValue
  */
 
@@ -55,16 +65,28 @@ export const SEMANTIC_PALETTE_HUES = Object.freeze({
 /** Frozen tone per appearance / contrast group / tier (see header). */
 export const SEMANTIC_TONES = Object.freeze({
     light: Object.freeze({
-        default: Object.freeze({ text: 30, muted: 50 }),
-        high: Object.freeze({ text: 30, muted: 40 }),
-        reduced: Object.freeze({ text: 30, muted: 50 })
+        default: Object.freeze({ text: 30, muted: 50, wash: 90 }),
+        high: Object.freeze({ text: 30, muted: 40, wash: 90 }),
+        reduced: Object.freeze({ text: 30, muted: 50, wash: 90 })
     }),
     dark: Object.freeze({
-        default: Object.freeze({ text: 70, muted: 60 }),
-        high: Object.freeze({ text: 80, muted: 70 }),
-        reduced: Object.freeze({ text: 70, muted: 60 })
+        default: Object.freeze({ text: 70, muted: 60, wash: 30 }),
+        high: Object.freeze({ text: 80, muted: 70, wash: 30 }),
+        reduced: Object.freeze({ text: 70, muted: 60, wash: 30 })
     })
 });
+
+/**
+ * Diff-editor wash IDs (the only consumers of `tier: 'wash'`).
+ * `inserted*` = green 150, `removed*` = red 30; line `@66` (subtle),
+ * text `@99` (stronger inline word highlight).
+ */
+export const SEMANTIC_DIFF_WASH_IDS = Object.freeze([
+    'diffEditor.insertedLineBackground',
+    'diffEditor.insertedTextBackground',
+    'diffEditor.removedLineBackground',
+    'diffEditor.removedTextBackground'
+]);
 
 /**
  * Workbench IDs whose ROLE value is a background every semantic color must
@@ -112,7 +134,7 @@ export function resolveSemanticColor(value, appearance, contrastGroup) {
     const tonesByTier = groupTones[contrastGroup];
     if (!tonesByTier) throw new Error(`unknown contrast group '${contrastGroup}' (expected default|high|reduced)`);
     const tone = tonesByTier[value.tier];
-    if (tone === undefined) throw new Error(`unknown semantic tier '${value.tier}' (expected text|muted)`);
+    if (tone === undefined) throw new Error(`unknown semantic tier '${value.tier}' (expected text|muted|wash)`);
     const argb = tonesForPalette(value.palette, bank, neutralBank)[tone];
     if (argb === undefined) throw new Error(`tone ${tone} missing from semantic palette '${value.palette}'`);
     return argb;
@@ -135,8 +157,14 @@ export function resolveSemanticColors(appearance, contrastGroup, colors) {
 
 /**
  * Fail closed when a frozen semantic tone does not hold its floor on the
- * real scheme backgrounds (opaque tone, see header). Throws with every
- * violation listed; the generator turns this into a hard abort.
+ * real scheme backgrounds (opaque tone, see header). Wash-tier diff
+ * backgrounds are backgrounds themselves: their opaque tone is NOT checked
+ * here (they would fail as foregrounds by design); they are verified by
+ * blend (`editor.foreground` + syntax on the alpha blend over
+ * `editor.background`) in the generator. Here they are only structural:
+ * palette must be green/red, ID must be a diff wash, alpha must be `66`
+ * (line) or `99` (inline text). Throws with every violation listed; the
+ * generator turns this into a hard abort.
  * @param {SemanticAppearance} appearance
  * @param {Record<string, number>} schemeAppearance one DynamicScheme half (ARGB ints)
  * @param {Record<string, unknown>} colors mapping values (role backgrounds + tiers)
@@ -164,6 +192,21 @@ export function guardSemanticContrast(appearance, schemeAppearance, colors, sema
     const tonesByTier = (SEMANTIC_TONES[appearance] ?? {})[contrastGroup] ?? {};
     for (const [key, argb] of Object.entries(semanticColors)) {
         const value = /** @type {SemanticColorValue} */ (colors[key]);
+        if (value.tier === 'wash') {
+            if (!SEMANTIC_DIFF_WASH_IDS.includes(key)) {
+                violations.push(`wash tier on non-diff ID '${key}' (wash is diffEditor.*Background only)`);
+                continue;
+            }
+            const expectPalette = key.startsWith('diffEditor.inserted') ? 'green' : 'red';
+            if (value.palette !== expectPalette) {
+                violations.push(`wash ${key} must use palette '${expectPalette}', got '${value.palette}'`);
+            }
+            const expectAlpha = key.endsWith('LineBackground') ? '66' : '99';
+            if (value.alpha !== expectAlpha) {
+                violations.push(`wash ${key} must carry alpha '${expectAlpha}' (line 66 / text 99), got ${JSON.stringify(value.alpha)}`);
+            }
+            continue;
+        }
         const floor = floors[value.tier];
         const tone = tonesByTier[value.tier];
         for (const [bgId, bgInt] of backgrounds) {

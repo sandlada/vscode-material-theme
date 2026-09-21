@@ -1,10 +1,13 @@
 /**
  * Probe the semantic git-diff / problem palettes (read-only).
  *
- * - Dumps the frozen palette hexes per appearance + tier.
+ * - Dumps the frozen palette hexes per appearance + tier (incl. wash).
  * - Sweeps 9 variants x 12 hues x 3 contrast groups x (light, dark,
  *   dark-oled) and re-verifies every semantic value against the real
- *   scheme backgrounds through `guardSemanticContrast`.
+ *   scheme backgrounds through `guardSemanticContrast`, plus the diff-wash
+ *   blend readability (`editor.foreground` + all syntax rules on the
+ *   alpha blend over `editor.background`) and inserted-vs-removed RGB
+ *   distance.
  * - Reports the worst ratio per palette across the matrix.
  * - Reports RGB distances between the palette tones (states sharing a
  *   palette are intentional: added == untracked green, info == modified
@@ -19,12 +22,14 @@ import { calculateContrastRatio, createTheme, formatHex, MaterialContrastLevel, 
 import { resolveVscodeMapping } from '../src/vscode-mapping.js';
 import {
     SEMANTIC_BACKGROUND_IDS,
+    SEMANTIC_DIFF_WASH_IDS,
     SEMANTIC_PALETTE_HUES,
     SEMANTIC_TONES,
     guardSemanticContrast,
     resolveSemanticColor,
     resolveSemanticColors
 } from '../src/vscode-semantic-palettes.js';
+import { SYNTAX_TIER_BY_RULE, resolveSyntaxPalettes } from '../src/vscode-syntax-palettes.js';
 
 const VARIANTS = Object.freeze({
     Monochrome: MaterialVariant.Monochrome,
@@ -74,7 +79,7 @@ function paletteValues(tier) {
 function main() {
     let failures = 0;
 
-    console.log('== frozen palette hex per appearance / group (text / muted) ==');
+    console.log('== frozen palette hex per appearance / group (text / muted / wash) ==');
     for (const appearance of ['light', 'dark']) {
         for (const group of ['default', 'high', 'reduced']) {
             const text = paletteValues('text').map((v) => `${v.palette}:${formatHex(resolveSemanticColor(v, appearance, group))}`);
@@ -82,6 +87,9 @@ function main() {
             const tones = SEMANTIC_TONES[appearance][group];
             console.log(`${appearance.padEnd(5)} ${group.padEnd(7)} text T${tones.text}  ${text.join(' ')}`);
             console.log(`${' '.repeat(13)} muted T${tones.muted} ${muted.join(' ')}`);
+            const washGreen = formatHex(resolveSemanticColor({ palette: 'green', tier: 'wash' }, appearance, group));
+            const washRed = formatHex(resolveSemanticColor({ palette: 'red', tier: 'wash' }, appearance, group));
+            console.log(`${' '.repeat(13)} wash T${tones.wash}   green:${washGreen} red:${washRed} (line @66 / text @99)`);
         }
     }
 
@@ -105,6 +113,9 @@ function main() {
 
     const worst = new Map();
     const sliderResidual = new Map();
+    const washWorst = new Map();
+    let washMinDistance = Infinity;
+    let washMinWhere = '';
     console.log('== matrix sweep (9 variants x 12 hues x 3 contrast groups x light/dark/dark-oled) ==');
     for (const [variantName, variant] of Object.entries(VARIANTS)) {
         const hues = variantName === 'Monochrome' ? [0] : HUES;
@@ -128,15 +139,67 @@ function main() {
                             continue;
                         }
                         // Worst ratio per palette+tier over the real backgrounds.
+                        // Wash-tier blends are backgrounds themselves: skip the
+                        // opaque check here (verified by blend below).
                         const backgrounds = SEMANTIC_BACKGROUND_IDS.map((id) => schemeAppearance[mapping.colors[id]]);
                         for (const [key, argb] of Object.entries(semantic)) {
                             const value = mapping.colors[key];
+                            if (value.tier === 'wash') continue;
                             const worstRatio = Math.min(...backgrounds.map((bg) => calculateContrastRatio(argb, bg)));
                             const worstKey = `${appearanceLabel}|${value.palette}|${value.tier}`;
                             const current = worst.get(worstKey);
                             if (current === undefined || worstRatio < current.ratio) {
                                 worst.set(worstKey, { ratio: worstRatio, where: label });
                             }
+                        }
+                        // Diff-wash blend readability: editor fg + every syntax
+                        // rule on the alpha blend over editor.background, plus
+                        // inserted-vs-removed RGB distance.
+                        try {
+                            const editorRole = mapping.colors['editor.background'];
+                            const editorFgRole = mapping.colors['editor.foreground'];
+                            const editorBg = schemeAppearance[editorRole];
+                            const editorFg = schemeAppearance[editorFgRole];
+                            const selRole = mapping.colors['editor.selectionBackground'];
+                            const inaRole = mapping.colors['editor.inactiveSelectionBackground'];
+                            const syntax = resolveSyntaxPalettes(appearance, group, [editorBg, schemeAppearance[selRole], schemeAppearance[inaRole]]);
+                            // NOTE: syntax tones are chosen for editor + opaque
+                            // selection steps (generator); the wash blend
+                            // itself is checked below.
+                            const textFloor = group === 'reduced' ? 3.0 : 4.5;
+                            const blends = {};
+                            for (const id of SEMANTIC_DIFF_WASH_IDS) {
+                                const washValue = mapping.colors[id];
+                                const washArgb = semantic[id];
+                                const blended = blend(washArgb, editorBg, washValue.alpha);
+                                blends[id] = blended;
+                                const fgRatio = calculateContrastRatio(editorFg, blended);
+                                const fgKey = `${appearanceLabel}|wash-fg`;
+                                const fgCur = washWorst.get(fgKey);
+                                if (fgCur === undefined || fgRatio < fgCur.ratio) washWorst.set(fgKey, { ratio: fgRatio, where: `${label} ${id}` });
+                                if (fgRatio < textFloor) throw new Error(`wash ${id} blend fg ${fgRatio.toFixed(2)} < ${textFloor}`);
+                                for (const [rule, tokenArgb] of Object.entries(syntax.tokenColors)) {
+                                    const tier = SYNTAX_TIER_BY_RULE[rule];
+                                    const floor = tier === 'muted' ? 3.0 : textFloor;
+                                    const ratio = calculateContrastRatio(tokenArgb, blended);
+                                    const wKey = `${appearanceLabel}|wash-${rule}`;
+                                    const wCur = washWorst.get(wKey);
+                                    if (wCur === undefined || ratio < wCur.ratio) washWorst.set(wKey, { ratio, where: `${label} ${id}` });
+                                    if (ratio < floor) throw new Error(`wash ${id} blend syntax ${rule} ${ratio.toFixed(2)} < ${floor}`);
+                                }
+                            }
+                            for (const [a, b] of [['diffEditor.insertedLineBackground', 'diffEditor.removedLineBackground'], ['diffEditor.insertedTextBackground', 'diffEditor.removedTextBackground']]) {
+                                const distance = rgbDistance(blends[a], blends[b]);
+                                if (distance < washMinDistance) {
+                                    washMinDistance = distance;
+                                    washMinWhere = `${label} ${a} vs ${b}`;
+                                }
+                                if (distance < 40) throw new Error(`wash ${a} vs ${b} distance ${distance.toFixed(0)} < 40`);
+                            }
+                        } catch (error) {
+                            failures += 1;
+                            console.log(`FAIL ${label} (wash): ${error.message}`);
+                            continue;
                         }
                         // Overview-ruler mark residual under the translucent slider.
                         if (contrastName === 'default') {
@@ -164,10 +227,16 @@ function main() {
         }
     }
 
-    console.log('== worst semantic ratio per palette+tier (floor: text 4.5/3.0 reduced, muted 3.0) ==');
+    console.log('== worst semantic ratio per palette+tier (floor: text 4.5/3.0 reduced, muted 3.0; wash verified by blend, not opaque) ==');
     for (const [key, { ratio, where }] of [...worst.entries()].sort()) {
         console.log(`${key.padEnd(28)} ${ratio.toFixed(2).padStart(6)}  (${where})`);
     }
+
+    console.log('== worst wash-blend ratio per appearance|check (fg floor 4.5/3.0 reduced, syntax muted 3.0) ==');
+    for (const [key, { ratio, where }] of [...washWorst.entries()].sort()) {
+        console.log(`${key.padEnd(28)} ${ratio.toFixed(2).padStart(6)}  (${where})`);
+    }
+    console.log(`== min inserted-vs-removed wash distance (floor 40) ==\nmin ${washMinDistance.toFixed(0)}  (${washMinWhere})`);
 
     console.log('== ruler mark residual through slider (higher = more visible; default contrast) ==');
     for (const [key, { residual, where }] of [...sliderResidual.entries()].sort()) {

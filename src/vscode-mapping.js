@@ -24,7 +24,10 @@
  *   (`src/vscode-semantic-palettes.js`) for git diff + problem semantics
  *   only. These must NOT follow the theme hue (a hue-330 theme would paint
  *   "added" pink), so they resolve from the shared palette bank at frozen
- *   tones and are identical across all shipped themes.
+ *   tones and are identical across all shipped themes. `tier` is
+ *   `'text'`/`'muted'` for foregrounds, `'wash'` for the four
+ *   `diffEditor.*Background` washes (green 150 / red 30, line `@66` /
+ *   text `@99`).
  *
  * Lessons carried over from `src/md3-mapping.js` (OpenCode-era, kept as
  * the readability reference):
@@ -37,19 +40,29 @@
  *   `on*Container` into a background-matching extreme. `on*Container`
  *   foregrounds therefore never appear in BASE; the last standard-contrast
  *   consumers (warning foregrounds) moved to the fixed `amber` palette.
- * - Washes stay neutral (`surfaceContainer*`): vivid variants push
- *   `tertiaryContainer`/`errorContainer` too saturated for washes, and
- *   tinted diff washes failed on some variant. Diff hue survives through
- *   git-decoration + diff token text roles.
- * - Selection backgrounds are opaque neutral steps (`surfaceContainerHighest`
- *   active / `surfaceContainerHigh` inactive), NOT tinted and NOT translucent:
- *   any mid-luminance tint washes syntax tokens out (translucent `primary@66`
- *   left nearly every token at ~3.3 and comments <3.0 in all 6 test themes;
- *   opaque `primaryContainer` fails dark outright, e.g. Expressive-dark 1.02).
- *   On neutral opaque the text tokens hold >=4.5 and muted comments hold
- *   >=3.28 across variants/modes (6-theme probe), and token colors survive
- *   inside the selection (no `editor.selectionForeground` override). List active/inactive follow
- *   the same Highest/High steps so the two states stay distinct.
+ * - Find/hover/range washes stay neutral (`surfaceContainer*` + `secondaryContainer`):
+ *   vivid variants push `tertiaryContainer`/`errorContainer` too saturated
+ *   for washes. Diff-editor washes are the exception: they are FIXED
+ *   red/green palette washes (`inserted*` green 150, `removed*` red 30,
+ *   light T90 / dark T30, line `@66` / text `@99`), so inserted vs removed
+ *   stay distinguishable in every variant (neutral diff washes left all
+ *   four IDs hex-identical). Diff hue also survives through git-decoration
+ *   + diff token text roles.
+ * - Editor/terminal/list selection backgrounds are opaque neutral steps
+ *   (`surfaceContainerHighest` active / `surfaceContainerHigh` inactive),
+ *   NOT tinted and NOT translucent: any mid-luminance tint washes syntax
+ *   tokens out (translucent `primary@66` left nearly every token at ~3.3
+ *   and comments <3.0 in all 6 test themes; opaque `primaryContainer`
+ *   fails dark outright, e.g. Expressive-dark 1.02). On neutral opaque the
+ *   text tokens hold >=4.5 and muted comments hold >=3.28 across
+ *   variants/modes (6-theme probe), and token colors survive inside the
+ *   selection (no `editor.selectionForeground` override). List
+ *   active/inactive follow the same Highest/High steps so the two states
+ *   stay distinct. The workbench `selection.background` (input-field text
+ *   selection, e.g. explorer rename) is the exception: translucent
+ *   `secondary@4d` over `input.background`, because it carries no syntax
+ *   tokens and must read as a tint against its own input surface (`@66`
+ *   fails Monochrome-dark / reduced, see BASE note).
  * - Top-level popups (quick input, context menus, dropdown lists,
  *   notifications) use the brightest surface role — `surfaceBright` in both
  *   appearances (light: equals `surface` T98, keeps the theme tint instead
@@ -60,14 +73,16 @@
  * - Diff/problem semantics are FIXED palettes, never DynamicScheme roles:
  *   meaning (added = green, deleted = red, error = red) must survive every
  *   variant, including Monochrome. Gutter bars + overview ruler marks +
- *   explorer labels all draw from the same named palettes (red 30,
- *   amber 60, green 150, blue 240, purple 300, gray neutral); ruler marks
- *   are the palette color at alpha `99` (VSCode's `hi(gutterColor, .6)`).
+ *   explorer labels + diff-editor washes all draw from the same named
+ *   palettes (red 30, amber 60, green 150, blue 240, purple 300, gray
+ *   neutral); ruler marks are the palette color at alpha `99` (VSCode's
+ *   `hi(gutterColor, .6)`); diff washes are green/red at frozen wash tones
+ *   (light T90 / dark T30), line `@66` / inline-text `@99`.
  * - Roles are restricted to the 55 roles present in BOTH `specVersion`
  *   `'2021'` and `'2025'` (the 2025-only `*Dim` roles are never used),
  *   so one mapping stays valid across spec versions.
  *
- * @typedef {string | { role: string, alpha: string } | { palette: string, tier: 'text' | 'muted', alpha?: string }} VscodeColorValue
+ * @typedef {string | { role: string, alpha: string } | { palette: string, tier: 'text' | 'muted' | 'wash', alpha?: string }} VscodeColorValue
  * @typedef {Record<string, VscodeColorValue>} VscodeColorMap workbench ID -> M3 role / fixed palette
  * @typedef {Record<string, string>} VscodeTokenMap token rule -> M3 role
  * @typedef {Record<string, string>} VscodeSemanticMap semantic token -> M3 role
@@ -88,7 +103,17 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'icon.foreground': 'onSurface',
     'widget.border': 'outlineVariant',
     'widget.shadow': 'shadow',
-    'selection.background': 'surfaceContainerHighest',
+    // Workbench text selection (input fields / text areas, e.g. explorer
+    // rename): translucent `secondary` over the input background so the
+    // selected range reads as a tint. It must NOT share `input.background`'s
+    // opaque step (both were `surfaceContainerHighest`, i.e. invisible
+    // selection). Editor/terminal/list selections stay opaque neutral below
+    // (syntax tokens must survive inside them); this ID carries no syntax.
+    // Alpha `4d` (not the `66` wash convention): measured sweep, 97 combos
+    // x light/dark — `primary@66` drops Monochrome-dark to 2.81 and reduced
+    // to 2.73; `secondary@4d` holds >=4.76 default / >=4.27 high / >=3.15
+    // reduced with the selection still distinct (>=1.39).
+    'selection.background': { role: 'secondary', alpha: '4d' },
     'sash.hoverBorder': 'primary',
     // Buttons + checkboxes
     'button.background': 'primary',
@@ -291,7 +316,9 @@ export const VSCODE_COLOR_DARK_POPUP = Object.freeze({
 
 /** Translucent washes + drop feedback (both appearances, all contrasts).
  * Alpha `66` follows the `dark_modern.json` match-highlight convention.
- * Selection is intentionally NOT here (opaque neutral steps, see header). */
+ * Editor/terminal/list selections are intentionally NOT here (opaque
+ * neutral steps, see header); the workbench `selection.background` input
+ * tint lives in BASE. */
 export const VSCODE_COLOR_WASH = Object.freeze({
     'editor.findMatchBackground': { role: 'primary', alpha: '66' },
     'editor.findMatchHighlightBackground': { role: 'secondaryContainer', alpha: '66' },
@@ -301,20 +328,22 @@ export const VSCODE_COLOR_WASH = Object.freeze({
     'editorGroup.dropBackground': { role: 'primary', alpha: '66' }
 });
 
-/** Standard-contrast light-only diff washes (neutral containers). */
+/** Standard-contrast light-only diff washes (fixed green/red palette).
+ * `inserted*` green 150, `removed*` red 30 at the frozen wash tone
+ * (light T90 via `tier: 'wash'`); line `@66`, inline-text `@99`. */
 export const VSCODE_COLOR_LIGHT_STD = Object.freeze({
-    'diffEditor.insertedTextBackground': { role: 'surfaceContainerHigh', alpha: '66' },
-    'diffEditor.removedTextBackground': { role: 'surfaceContainerHigh', alpha: '66' },
-    'diffEditor.insertedLineBackground': { role: 'surfaceContainerHigh', alpha: '66' },
-    'diffEditor.removedLineBackground': { role: 'surfaceContainerHigh', alpha: '66' }
+    'diffEditor.insertedTextBackground': { palette: 'green', tier: 'wash', alpha: '99' },
+    'diffEditor.removedTextBackground': { palette: 'red', tier: 'wash', alpha: '99' },
+    'diffEditor.insertedLineBackground': { palette: 'green', tier: 'wash', alpha: '66' },
+    'diffEditor.removedLineBackground': { palette: 'red', tier: 'wash', alpha: '66' }
 });
 
-/** Standard-contrast dark-only diff washes (neutral containers). */
+/** Standard-contrast dark-only diff washes (same palette language, dark T30). */
 export const VSCODE_COLOR_DARK_STD = Object.freeze({
-    'diffEditor.insertedTextBackground': { role: 'surfaceContainerHighest', alpha: '66' },
-    'diffEditor.removedTextBackground': { role: 'surfaceContainerHighest', alpha: '66' },
-    'diffEditor.insertedLineBackground': { role: 'surfaceContainerHighest', alpha: '66' },
-    'diffEditor.removedLineBackground': { role: 'surfaceContainerHighest', alpha: '66' }
+    'diffEditor.insertedTextBackground': { palette: 'green', tier: 'wash', alpha: '99' },
+    'diffEditor.removedTextBackground': { palette: 'red', tier: 'wash', alpha: '99' },
+    'diffEditor.insertedLineBackground': { palette: 'green', tier: 'wash', alpha: '66' },
+    'diffEditor.removedLineBackground': { palette: 'red', tier: 'wash', alpha: '66' }
 });
 
 /**
@@ -332,27 +361,23 @@ export const VSCODE_COLOR_LINE_NUMBER_BASE = Object.freeze({
 });
 
 /**
- * Monochrome-only entries (both appearances). The monochrome scheme has
- * no hue to carry washes, so diff washes use the strongest neutral step
- * in both appearances.
+ * Monochrome-only entries (both appearances). Monochrome keeps the same
+ * colorful diff semantics (option A, mirroring syntax): the diff washes
+ * stay green/red palette washes so added vs deleted remain distinguishable
+ * on the gray chrome. No per-appearance neutral override remains.
  */
-export const VSCODE_COLOR_MONOCHROME = Object.freeze({
-    'diffEditor.insertedTextBackground': { role: 'surfaceContainerHighest', alpha: '66' },
-    'diffEditor.removedTextBackground': { role: 'surfaceContainerHighest', alpha: '66' },
-    'diffEditor.insertedLineBackground': { role: 'surfaceContainerHighest', alpha: '66' },
-    'diffEditor.removedLineBackground': { role: 'surfaceContainerHighest', alpha: '66' }
-});
+export const VSCODE_COLOR_MONOCHROME = Object.freeze({});
 
 /**
- * High-contrast entries (both appearances). `*Container` diff washes fall
- * back to one neutral step (the warning foregrounds that used to override
- * here are fixed-palette `amber` now, see header).
+ * High-contrast entries (both appearances). Diff washes stay on the same
+ * fixed green/red palette language (frozen wash tones); only the text-tier
+ * foregrounds shift for high contrast, never the diff hues.
  */
 export const VSCODE_COLOR_HIGH = Object.freeze({
-    'diffEditor.insertedTextBackground': { role: 'surfaceContainerHigh', alpha: '66' },
-    'diffEditor.removedTextBackground': { role: 'surfaceContainerHigh', alpha: '66' },
-    'diffEditor.insertedLineBackground': { role: 'surfaceContainerHigh', alpha: '66' },
-    'diffEditor.removedLineBackground': { role: 'surfaceContainerHigh', alpha: '66' }
+    'diffEditor.insertedTextBackground': { palette: 'green', tier: 'wash', alpha: '99' },
+    'diffEditor.removedTextBackground': { palette: 'red', tier: 'wash', alpha: '99' },
+    'diffEditor.insertedLineBackground': { palette: 'green', tier: 'wash', alpha: '66' },
+    'diffEditor.removedLineBackground': { palette: 'red', tier: 'wash', alpha: '66' }
 });
 
 /** Token rule -> M3 role at standard contrast (both appearances). */

@@ -176,8 +176,9 @@ export const VSCODE_OVERVIEW_RULER_KEYS = Object.freeze([
     'editorOverviewRuler.infoForeground'
 ]);
 
-/** Diff editor washes (4). Neutral containers by construction (see
- * `src/vscode-mapping.js`); hue lives in git decorations + token colors. */
+/** Diff editor washes (4). Fixed green/red palette washes by construction
+ * (`inserted*` green 150, `removed*` red 30, light T90 / dark T30, line
+ * `@66` / text `@99`); hue also lives in git decorations + token colors. */
 export const VSCODE_DIFF_KEYS = Object.freeze([
     'diffEditor.insertedTextBackground',
     'diffEditor.removedTextBackground',
