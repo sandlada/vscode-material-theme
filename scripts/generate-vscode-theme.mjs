@@ -191,6 +191,10 @@ const TEXT_PAIRS = Object.freeze([
     ['editor.foreground', 'editor.inactiveSelectionBackground'],
     ['menu.foreground', 'menu.background'],
     ['menu.selectionForeground', 'menu.selectionBackground'],
+    // Quick-input focused row: `quickInputList.focusForeground` derives
+    // from `list.activeSelectionForeground` (onSurface), so guard that on
+    // the explicit `quickInputList.focusBackground` step.
+    ['list.activeSelectionForeground', 'quickInputList.focusBackground'],
     ['gitDecoration.addedResourceForeground', 'editor'],
     ['gitDecoration.modifiedResourceForeground', 'editor'],
     ['gitDecoration.deletedResourceForeground', 'editor'],

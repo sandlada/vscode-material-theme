@@ -50,6 +50,13 @@
  *   >=3.28 across variants/modes (6-theme probe), and token colors survive
  *   inside the selection (no `editor.selectionForeground` override). List active/inactive follow
  *   the same Highest/High steps so the two states stay distinct.
+ * - Top-level popups (quick input, context menus, dropdown lists,
+ *   notifications) use the brightest surface role — `surfaceBright` in both
+ *   appearances (light: equals `surface` T98, keeps the theme tint instead
+ *   of stark `surfaceContainerLowest` white; dark: T24, above every
+ *   container step). Popup-internal selections step DOWN in dark
+ *   (`surfaceContainerHigh`) because `surfaceBright` outranks
+ *   `surfaceContainerHighest`; light keeps `surfaceContainerHighest`.
  * - Diff/problem semantics are FIXED palettes, never DynamicScheme roles:
  *   meaning (added = green, deleted = red, error = red) must survive every
  *   variant, including Monochrome. Gutter bars + overview ruler marks +
@@ -98,7 +105,6 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'dropdown.background': 'surfaceContainerHighest',
     'dropdown.border': 'outlineVariant',
     'dropdown.foreground': 'onSurface',
-    'dropdown.listBackground': 'surfaceContainerHigh',
     'input.background': 'surfaceContainerHighest',
     'input.border': 'outlineVariant',
     'input.foreground': 'onSurface',
@@ -198,8 +204,9 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'gitDecoration.stageModifiedResourceForeground': { palette: 'amber', tier: 'text' },
     'gitDecoration.stageDeletedResourceForeground': { palette: 'red', tier: 'text' },
     'gitDecoration.submoduleResourceForeground': { palette: 'blue', tier: 'text' },
-    // Terminal
-    'terminal.background': 'surfaceContainer',
+    // Terminal (panel or editor area): shares the editor surface, like the
+    // panel views below.
+    'terminal.background': 'surface',
     'terminal.foreground': 'onSurface',
     'terminalCursor.foreground': 'primary',
     'terminal.selectionBackground': 'surfaceContainerHighest',
@@ -216,15 +223,16 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'titleBar.inactiveBackground': 'surfaceContainerLow',
     'titleBar.inactiveForeground': 'onSurfaceVariant',
     'titleBar.border': 'outlineVariant',
-    // Panel + quick input + notifications
-    'panel.background': 'surfaceContainer',
+    // Panel views (Problems / Output / Debug Console / Terminal / Ports)
+    // share the editor surface so the editing area + panel read as ONE
+    // continuous sheet; `panel.border` (outlineVariant) keeps the separator.
+    'panel.background': 'surface',
     'panel.border': 'outlineVariant',
     'panelTitle.activeBorder': 'primary',
     'panelTitle.activeForeground': 'onSurface',
     'panelTitle.inactiveForeground': 'onSurfaceVariant',
-    'quickInput.background': 'surfaceContainerHigh',
+    // Quick input + notifications (popup layer, see `*_POPUP` constants)
     'quickInput.foreground': 'onSurface',
-    'notifications.background': 'surfaceContainerHigh',
     'notifications.border': 'outlineVariant',
     'notifications.foreground': 'onSurface',
     // Markdown text UI
@@ -238,14 +246,47 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     // NOTE: on OLED dark the editor is already `#000000`, so the block
     // boundary disappears there and only token colors mark code spans.
     'textCodeBlock.background': 'surfaceContainerLowest',
-    // Menus (context/right-click): surface body, subtle border, neutral
-    // selection step shared with list selection
-    'menu.background': 'surface',
+    // Menus (context/right-click): subtle border, neutral selection step
+    // shared with list selection. Body role is appearance-scoped
+    // (top-level popup, see `VSCODE_COLOR_*_ELEVATED` below).
     'menu.foreground': 'onSurface',
-    'menu.selectionBackground': 'surfaceContainerHighest',
     'menu.selectionForeground': 'onSurface',
     'menu.separatorBackground': 'outlineVariant',
     'menu.border': 'outlineVariant'
+});
+
+/**
+ * Top-level popup layer (z-highest surfaces + their inset selection steps):
+ * quick input / command palette, context menus, dropdown lists, notification
+ * toasts. Elevation is z-order, so the top-most surface uses the brightest
+ * surface role — `surfaceBright` in BOTH appearances (light: T98, i.e. the
+ * app surface tone itself, no stark white and no recessed container tint;
+ * dark: T24, above every container step).
+ *
+ * Because dark `surfaceBright` (T24) sits ABOVE `surfaceContainerHighest`
+ * (T22), a popup-internal selection must step DOWN or it becomes invisible
+ * (delta L 2): dark uses `surfaceContainerHigh` (T17, clear of the popup
+ * surface and of `list.hoverBackground`), light uses
+ * `surfaceContainerHighest` (T90). Sidebar/list selections on the container
+ * surfaces keep their own steps — they are not popups.
+ * Mode constants, applied to every contrast group.
+ */
+export const VSCODE_COLOR_LIGHT_POPUP = Object.freeze({
+    'dropdown.listBackground': 'surfaceBright',
+    'menu.background': 'surfaceBright',
+    'quickInput.background': 'surfaceBright',
+    'notifications.background': 'surfaceBright',
+    'menu.selectionBackground': 'surfaceContainerHighest',
+    'quickInputList.focusBackground': 'surfaceContainerHighest'
+});
+
+export const VSCODE_COLOR_DARK_POPUP = Object.freeze({
+    'dropdown.listBackground': 'surfaceBright',
+    'menu.background': 'surfaceBright',
+    'quickInput.background': 'surfaceBright',
+    'notifications.background': 'surfaceBright',
+    'menu.selectionBackground': 'surfaceContainerHigh',
+    'quickInputList.focusBackground': 'surfaceContainerHigh'
 });
 
 /** Translucent washes + drop feedback (both appearances, all contrasts).
@@ -417,10 +458,11 @@ export function resolveVscodeMapping(appearance, contrastGroup, variantName) {
     const monoToken = variantName === 'Monochrome' ? VSCODE_TOKEN_MONOCHROME : {};
     const propTweak = VSCODE_TOKEN_PROPERTY_TWEAKS[`${variantName}:${appearance}`] ?? {};
     const modeWash = appearance === 'light' ? VSCODE_COLOR_LIGHT_STD : VSCODE_COLOR_DARK_STD;
+    const modePopup = appearance === 'light' ? VSCODE_COLOR_LIGHT_POPUP : VSCODE_COLOR_DARK_POPUP;
     if (contrastGroup === 'high') {
         const tokenRoles = Object.freeze({ ...VSCODE_TOKEN_BASE, ...VSCODE_TOKEN_HIGH, ...monoToken, ...propTweak });
         return {
-            colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...VSCODE_COLOR_HIGH, ...monoColor }),
+            colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...modePopup, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...VSCODE_COLOR_HIGH, ...monoColor }),
             tokenRoles,
             semanticRoles: Object.freeze({
                 newOperator: tokenRoles.keywordControl,
@@ -435,7 +477,7 @@ export function resolveVscodeMapping(appearance, contrastGroup, variantName) {
         : Object.freeze({ ...VSCODE_TOKEN_BASE, ...monoToken, ...propTweak });
     const reducedColor = contrastGroup === 'reduced' ? VSCODE_COLOR_REDUCED : {};
     return {
-        colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...modeWash, ...reducedColor, ...monoColor }),
+        colors: Object.freeze({ ...VSCODE_COLOR_BASE, ...modePopup, ...VSCODE_COLOR_LINE_NUMBER_BASE, ...VSCODE_COLOR_WASH, ...modeWash, ...reducedColor, ...monoColor }),
         tokenRoles,
         semanticRoles: Object.freeze({
             newOperator: tokenRoles.keywordControl,

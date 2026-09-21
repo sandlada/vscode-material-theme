@@ -163,12 +163,13 @@ OpenCode one-file-two-appearances rule cannot carry over:
 
 ## Workflow (order matters; single-run + matrix DONE)
 
-1. `src/vscode-schema.js` — DONE (v1 source of truth): 153 workbench
+1. `src/vscode-schema.js` — DONE (v1 source of truth): 154 workbench
    color IDs (curated from `dark_modern.json`/`dark_vs.json`, incl. 6
    `menu.*` IDs so context menus use `surface` + `outlineVariant`
    border instead of the neutral fallback, 6
    `editorOverviewRuler.*` marks, 10 `gitDecoration.*` states, 3
-   `editorGutter.*SecondaryBackground` staged bars) + 26
+   `editorGutter.*SecondaryBackground` staged bars, `quickInputList.focusBackground`)
+   + 26
    TextMate rules (scopes from `dark_vs.json`/`dark_plus.json`,
    `fontStyle` fixed here; `link` covers `markup.underline.link.markdown`
    with `underline`, mirroring `dark_vs.json`) + 4 semantic tokens (`newOperator`,
@@ -191,6 +192,16 @@ OpenCode one-file-two-appearances rule cannot carry over:
    shape `{ palette, tier, alpha? }` (fixed palettes, NEVER scheme roles —
    a hue-330 theme must not paint "added" pink; see
    `src/vscode-semantic-palettes.js`; ruler marks are palette @ `99`).
+   Top-level popups (quick input, menus, dropdown lists, notifications) use
+   the brightest surface role — `surfaceBright` in both appearances
+   (`VSCODE_COLOR_LIGHT_POPUP` / `..._DARK_POPUP`; light T98 = the app
+   surface tone, dark T24 above every container step), with popup-internal
+   selections stepping DOWN in dark (`surfaceContainerHigh`, because
+   `surfaceBright` outranks `surfaceContainerHighest`): see
+   `menu.selectionBackground` + `quickInputList.focusBackground`.
+   Panel views (Problems / Output / Debug Console / Terminal / Ports) share
+   the editor `surface` so the editing area + panel read as one continuous
+   sheet; `panel.border` = `outlineVariant` keeps the separator.
    Borders stay `outlineVariant`
    throughout (a `outline` pass on chrome separators was previewed and
    reverted: too heavy, `outline` runs much darker than `outlineVariant`).

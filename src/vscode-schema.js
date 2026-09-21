@@ -226,7 +226,7 @@ export const VSCODE_STATUS_KEYS = Object.freeze([
     'titleBar.border'
 ]);
 
-/** Panel + quick input + notifications (10). */
+/** Panel + quick input + notifications (11). */
 export const VSCODE_PANEL_KEYS = Object.freeze([
     'panel.background',
     'panel.border',
@@ -235,6 +235,7 @@ export const VSCODE_PANEL_KEYS = Object.freeze([
     'panelTitle.inactiveForeground',
     'quickInput.background',
     'quickInput.foreground',
+    'quickInputList.focusBackground',
     'notifications.background',
     'notifications.border',
     'notifications.foreground'
@@ -260,7 +261,7 @@ export const VSCODE_MENU_KEYS = Object.freeze([
     'menu.border'
 ]);
 
-/** All workbench color IDs every emitted file must fill (153). */
+/** All workbench color IDs every emitted file must fill (154). */
 export const VSCODE_COLOR_KEYS = Object.freeze([
     ...VSCODE_BASE_KEYS,
     ...VSCODE_BUTTON_KEYS,

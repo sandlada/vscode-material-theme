@@ -40,7 +40,7 @@ absolute GitHub URLs so they render on the Marketplace.
 - 3 appearances per combo: `light` (`uiTheme: vs`), `dark`
   (`uiTheme: vs-dark`), `dark-oled` (`uiTheme: vs-dark`, pitch-black
   editor surface).
-- Full workbench coverage (153 color IDs), 26 TextMate rules, and
+- Full workbench coverage (154 color IDs), 26 TextMate rules, and
   semantic tokens with `semanticHighlighting: true`.
 - Git diff + problem colors come from fixed MD3 tonal palettes
   (green/blue/red/purple/amber/gray), so "added" stays green in every
@@ -222,7 +222,7 @@ commands. Customize appearance per theme via:
   (`src/vscode-schema.js`, `src/vscode-mapping.js`,
   `scripts/generate-vscode-theme.mjs`,
   `scripts/generate-vscode-matrix.mjs`).
-- 153 workbench colors + 26 TextMate rules + 4 semantic tokens per
+- 154 workbench colors + 26 TextMate rules + 4 semantic tokens per
   file, fail-closed on drift and contrast violations.
 
 ## Contributing
