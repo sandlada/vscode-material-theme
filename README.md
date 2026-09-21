@@ -213,6 +213,22 @@ commands. Customize appearance per theme via:
 
 ## Release Notes
 
+### 0.0.2
+
+- Diff-editor washes are fixed red/green palette tints instead of one
+  neutral gray: `inserted*` green 150, `removed*` red 30 (light T90 /
+  dark T30, line `@66` / inline text `@99`), so added vs deleted stay
+  distinguishable in every variant including Monochrome. New
+  `tier: 'wash'` + blend guards (editor fg + all syntax rules on the
+  wash, inserted-vs-removed distance floor) abort generation instead of
+  shipping an unreadable diff; `scripts/probe-semantic-palettes.mjs`
+  covers the full matrix.
+- `package.json` scripts cleaned up: broken OpenCode-era `generate` /
+  `matrix` entries removed, `probe` / `probe:semantic` /
+  `probe:syntax` added, `package` no longer hardcodes a stale
+  versioned filename. Dead `scripts/generate-md3-*.mjs` deleted.
+- 291-file matrix regenerated with the new diff colors.
+
 ### 0.0.1
 
 - Initial VSCode port: 291-file default-contrast matrix
