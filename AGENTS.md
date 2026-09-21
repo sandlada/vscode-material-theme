@@ -15,10 +15,10 @@ Semantic palette layer DONE (`src/vscode-palette-bank.js` shared bank +
 not scheme roles) and `scrollbarSlider.*` translucency fix DONE
 (overview-ruler marks must show through the fading scrollbar).
 `themes/` holds the full 291-file default-contrast matrix
-(97 combos x light/dark/dark-oled). `src/tui-schema.js`,
-`src/md3-mapping.js`, `scripts/generate-md3-tokens.mjs`,
-`scripts/generate-md3-matrix.mjs` are OpenCode-era legacy (readability
-reference only; do not run for VSCode output).
+(97 combos x light/dark/dark-oled). The OpenCode-era peers
+(`src/tui-schema.js`, `src/md3-mapping.js`,
+`scripts/generate-md3-*.mjs`) were removed; port history lives in git,
+and the surviving design notes are in `src/vscode-mapping.js`.
 
 References (do not re-derive the VSCode contract from memory):
 
@@ -175,13 +175,14 @@ OpenCode one-file-two-appearances rule cannot carry over:
    with `underline`, mirroring `dark_vs.json`) + 4 semantic tokens (`newOperator`,
    `stringLiteral`, `customLiteral`, `numberLiteral`). Every emitted
    file must fill it exactly (fail closed on drift). IDs outside it
-   fall back to VSCode defaults at runtime. `src/tui-schema.js` is
-   LEGACY (OpenCode 50 `theme.*` keys); do not extend.
+   fall back to VSCode defaults at runtime. `src/tui-schema.js` was
+   removed (OpenCode 50 `theme.*` keys live in git history); do not
+   resurrect it.
 2. `src/vscode-mapping.js` — DONE (v1 source of truth):
    `resolveVscodeMapping(appearance, group, variant)` ->
    `{ colors, tokenRoles, semanticRoles }` (`BASE` + `WASH`/
    `LIGHT_STD`/`DARK_STD`/`REDUCED`/`HIGH`/`MONOCHROME`, mirroring the
-   `src/md3-mapping.js` structure). Reuses the neutral-wash + text-hue
+   removed `src/md3-mapping.js` structure — see git history). Reuses the neutral-wash + text-hue
    + container-roulette rules; roles restricted to the 55 roles shared
    by spec `2021`+`2025`; translucent `{ role, alpha }` only where the
    theme-color reference demands non-opaque, PLUS `scrollbarSlider.*`
@@ -222,8 +223,7 @@ OpenCode one-file-two-appearances rule cannot carry over:
    their TextMate counterparts by construction. Verified: exact schema
    coverage x 54 combos (2 appearances x 3 groups x 9 variants), all
    roles in both spec sets, contrast sanity (text 4.5 / muted 3.0) on
-   probed hues. `src/md3-mapping.js` is LEGACY (readability reference
-   only).
+   probed hues.
 3. `scripts/generate-vscode-theme.mjs` — DONE (v1 single-run VSCode
    generator; Bun-only, same reason as above). Without `--oled` emits the
    plain light/dark pair
@@ -243,8 +243,6 @@ OpenCode one-file-two-appearances rule cannot carry over:
    `bun scripts/generate-vscode-theme.mjs --variant Expressive --hue 150
    --out ./themes` (or `--source '#rrggbb'` instead of `--hue`;
    add `--oled` for the dark OLED file).
-   `scripts/generate-md3-tokens.mjs` is LEGACY (OpenCode dual-appearance);
-   do not run for VSCode output.
 4. `scripts/generate-vscode-matrix.mjs` — DONE (v1 VSCode matrix driver;
    `--out ./themes`, fail fast on guard). Sweeps 9 variants x 12 HCT
    hues (`0-330` step `30`, `monochrome` hue `0` only) = 97 combos x
@@ -253,8 +251,6 @@ OpenCode one-file-two-appearances rule cannot carry over:
    `bun scripts/generate-vscode-matrix.mjs --out ./themes`
    (`--contrast high|reduced` + `--spec 2021` supported for one-off
    sweeps; default-contrast matrix is the shipped set).
-   `scripts/generate-md3-matrix.mjs --out ./tui` is LEGACY (194 files).
-   Do not run.
 
 ## Generation stack (frozen v1; used by both VSCode generators)
 

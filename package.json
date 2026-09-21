@@ -13,11 +13,12 @@
     "url": "https://github.com/sandlada/vscode-material-theme/issues"
   },
   "scripts": {
-    "generate": "bun scripts/generate-md3-tokens.mjs",
-    "matrix": "bun scripts/generate-md3-matrix.mjs --out ./tui",
     "generate:vscode": "bun scripts/generate-vscode-theme.mjs",
     "matrix:vscode": "bun scripts/generate-vscode-matrix.mjs --out ./themes",
-    "package": "vsce package --out sandlada-vscode-material-design-theme-0.0.1.vsix"
+    "probe:semantic": "bun scripts/probe-semantic-palettes.mjs",
+    "probe:syntax": "bun scripts/probe-syntax-palettes.mjs",
+    "probe": "bun scripts/probe-semantic-palettes.mjs && bun scripts/probe-syntax-palettes.mjs",
+    "package": "vsce package"
   },
   "keywords": [
     "vscode",

@@ -29,8 +29,8 @@
  *   `diffEditor.*Background` washes (green 150 / red 30, line `@66` /
  *   text `@99`).
  *
- * Lessons carried over from `src/md3-mapping.js` (OpenCode-era, kept as
- * the readability reference):
+ * Lessons carried over from the removed `src/md3-mapping.js`
+ * (OpenCode-era; history in git, notes survive here):
  * - Only symbolic M3 roles, never hand-picked hex. Chrome hues follow the
  *   source color by design (no guaranteed red/green/cyan for chrome —
  *   which is why git diff + problem semantics use the fixed palette layer

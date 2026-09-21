@@ -185,9 +185,6 @@ automatically; after a one-off single run, register the new files in
 `path`) so the picker sees them.
 
 Not yet available: `hc-black` / `hc-light` high-contrast entries.
-Do not use `scripts/generate-md3-tokens.mjs` or
-`scripts/generate-md3-matrix.mjs` — they are OpenCode-era legacy for
-`./tui` output.
 
 ## Requirements
 
@@ -230,8 +227,9 @@ commands. Customize appearance per theme via:
 - Source: <https://github.com/sandlada/vscode-material-theme>
 - Regenerate only via `scripts/generate-vscode-matrix.mjs`; do not
   hand-edit `themes/` or `contributes.themes`.
-- OpenCode-era files (`src/tui-schema.js`, `src/md3-mapping.js`,
-  `scripts/generate-md3-*.mjs`) are readability reference only.
+- OpenCode-era peers (`src/tui-schema.js`, `src/md3-mapping.js`,
+  `scripts/generate-md3-*.mjs`) were removed; the port history lives in
+  git, and the surviving design notes are in `src/vscode-mapping.js`.
 
 ## License
 
