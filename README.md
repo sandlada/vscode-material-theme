@@ -23,13 +23,13 @@ Issues: <https://github.com/sandlada/vscode-material-theme/issues>
 Source files live in `docs/` (per repo convention). Images below use
 absolute GitHub URLs so they render on the Marketplace.
 
-![MD3:Content 150 Light — JS editor, light surface](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/content150.png)
+![MD3:Content 150 Light](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/modern-content-150-light.png)
+![MD3:Content 150 Dark OLED](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/modern-content-150-dark-oled.png)
 
-![MD3:Expressive 210 Dark OLED — JS editor, pitch-black surface](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/expressive-210-dark-oled.png)
+![MD3:Expressive 180 Light](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/modern-expressive-180-light.png)
+![MD3:FruitSalad 90 Light](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/modern-fruitsalad-90-light.png)
 
-![MD3:FruitSalad 60 Light — JS editor, light surface](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/fruitsalad60.png)
-
-![MD3:Monochrome Light — README editor + preview](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/monochrome.png)
+![MD3:Monochrome Dark](https://raw.githubusercontent.com/sandlada/vscode-material-theme/main/docs/modern-monochrome-dark.png)
 
 ## Features
 
@@ -40,8 +40,9 @@ absolute GitHub URLs so they render on the Marketplace.
 - 3 appearances per combo: `light` (`uiTheme: vs`), `dark`
   (`uiTheme: vs-dark`), `dark-oled` (`uiTheme: vs-dark`, pitch-black
   editor surface).
-- Full workbench coverage (171 color IDs), 26 TextMate rules, and
-  semantic tokens with `semanticHighlighting: true`.
+- Partial workbench coverage (171 of 874 color IDs), 26 TextMate rules, and
+  semantic tokens with `semanticHighlighting: true`. Unlisted IDs fall
+  back to VSCode defaults at runtime.
 - Git diff + problem colors come from fixed MD3 tonal palettes
   (green/blue/red/purple/amber/gray), so "added" stays green in every
   variant instead of following the theme hue; the scrollbar slider stays
@@ -189,6 +190,9 @@ Not yet available: `hc-black` / `hc-light` high-contrast entries.
 ## Requirements
 
 - VSCode `^1.80.0` (see `engines.vscode` in `package.json`).
+  Recommended: latest VSCode (`1.139+` Modern UI) for full `modern*`
+  token coverage; older versions load fine but ignore unknown `modern*`
+  IDs and fall back to VSCode defaults there.
 - [Bun](https://bun.sh/) only for running the generator scripts;
   the shipped `themes/*.json` files have no runtime dependencies.
 
