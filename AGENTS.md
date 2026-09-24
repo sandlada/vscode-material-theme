@@ -163,12 +163,14 @@ OpenCode one-file-two-appearances rule cannot carry over:
 
 ## Workflow (order matters; single-run + matrix DONE)
 
-1. `src/vscode-schema.js` — DONE (v1 source of truth): 171 workbench
+1. `src/vscode-schema.js` — DONE (v1 source of truth): 179 workbench
    color IDs (curated from `dark_modern.json`/`dark_vs.json`, incl. 6
    `menu.*` IDs so context menus use `surface` + `outlineVariant`
    border instead of the neutral fallback, 6
    `editorOverviewRuler.*` marks, 10 `gitDecoration.*` states, 3
-   `editorGutter.*SecondaryBackground` staged bars, `quickInputList.focusBackground`)
+   `editorGutter.*SecondaryBackground` staged bars, `quickInputList.focusBackground`,
+   8 `tab.selected*`/`tab.unfocused*`/`tab.hoverForeground` IDs so selected/hover/unfocused
+   tab text never falls back to the unreadable VSCode defaults)
    + 26
    TextMate rules (scopes from `dark_vs.json`/`dark_plus.json`,
    `fontStyle` fixed here; `link` covers `markup.underline.link.markdown`

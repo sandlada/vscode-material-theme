@@ -184,13 +184,34 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'sideBarSectionHeader.foreground': 'onSurfaceVariant',
     'sideBarSectionHeader.border': 'outlineVariant',
     // Editor groups + tabs (classic `tab.*` + modern `modern*Tab.*`).
-    // The active pill is `primaryContainer` / `onPrimaryContainer`;
+    // The classic active pill is `primaryContainer` / `onPrimaryContainer`
+    // (and so is `modernTab.active*` for non-editor tabs);
     // `tab.activeBorderTop` stays `primary` for classic (modern forces tab
     // borders transparent, so the pill alone marks the active tab there).
+    // Modern EDITOR tabs are neutral instead (see below).
+    // `selected*` is the neutral selection step (`surfaceContainerHighest` /
+    // `onSurface`, same as `list.activeSelection*`), NOT the green pill:
+    // selected tabs must stay distinct from the active tab, and the VSCode
+    // fallback (`selectedForeground` near-white on light neutral) is the
+    // user-reported invisible-tab-text bug. `hover` / `unfocusedHover`
+    // share the same neutral step + `onSurface` so every transient state
+    // is guarded readable; `unfocusedActive` keeps `surfaceContainer` with
+    // opaque `onSurface` (the dimmed fallback washes out on light), and
+    // `unfocusedInactive` mirrors the focused inactive pair.
     // Modern action backgrounds mirror the fill they sit on (opaque,
-    // otherwise the close-icon gradient shows the VSCode default gray);
-    // `selectedActionBackground` tracks the hover step (the selected fill
-    // itself is unthemed by design, like classic `tab.selectedBackground`).
+    // otherwise the close-icon gradient shows the VSCode default gray).
+    // Modern editor-tab active state is NEUTRAL (`surfaceContainerHighest` /
+    // `onSurface`), deliberately NOT the green pill: the modern
+    // `connected-editor-tabs` style hardcodes the active fill to the editor
+    // surface (`--modern-ui-connected-tab-surface` = `editor.background`,
+    // injected from the theme at runtime) while the label keeps
+    // `modernEditorTab.activeForeground` — one foreground ID serving two
+    // backgrounds (green pill vs editor surface), which no single color
+    // survives (white dies on the light surface ~1.0, dark dies on the
+    // green pill ~3.8; user-reported invisible active tab). Neutral is
+    // guarded readable under both the pill fill and the surface fill, in
+    // both appearances. The green pill survives on classic `tab.active*`
+    // (no connected variant) and `modernTab.active*` (non-editor tabs).
     // Modern has no inactive-foreground ID (upstream hardcodes a 50%
     // `foreground` mix), so only backgrounds/foregrounds with IDs are set.
     'editorGroup.border': 'outlineVariant',
@@ -202,21 +223,29 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'tab.inactiveBackground': 'surfaceVariant',
     'tab.inactiveForeground': 'onSurfaceVariant',
     'tab.hoverBackground': 'surfaceContainerHighest',
+    'tab.hoverForeground': 'onSurface',
     'tab.border': 'outlineVariant',
+    'tab.selectedBackground': 'surfaceContainerHighest',
+    'tab.selectedForeground': 'onSurface',
     'tab.unfocusedActiveBackground': 'surfaceContainer',
+    'tab.unfocusedActiveForeground': 'onSurface',
+    'tab.unfocusedHoverBackground': 'surfaceContainerHighest',
+    'tab.unfocusedHoverForeground': 'onSurface',
+    'tab.unfocusedInactiveBackground': 'surfaceVariant',
+    'tab.unfocusedInactiveForeground': 'onSurfaceVariant',
     'modernTab.activeBackground': 'primary',
     'modernTab.activeForeground': 'onPrimary',
     'modernTab.hoverBackground': 'surfaceContainerHighest',
     'modernTab.hoverForeground': 'onSurface',
-    'modernEditorTab.activeBackground': 'primaryContainer',
-    'modernEditorTab.activeForeground': 'onPrimaryContainer',
+    'modernEditorTab.activeBackground': 'surfaceContainerHighest',
+    'modernEditorTab.activeForeground': 'onSurface',
     'modernEditorTab.inactiveBackground': 'surfaceVariant',
     'modernEditorTab.hoverBackground': 'surfaceContainerHighest',
     'modernEditorTab.hoverForeground': 'onSurfaceVariant',
-    'modernEditorTab.activeHoverBackground': 'primaryContainer',
-    'modernEditorTab.activeActionBackground': 'primaryContainer',
+    'modernEditorTab.activeHoverBackground': 'surfaceContainerHighest',
+    'modernEditorTab.activeActionBackground': 'surfaceContainerHighest',
     'modernEditorTab.hoverActionBackground': 'surfaceContainerHighest',
-    'modernEditorTab.activeHoverActionBackground': 'primaryContainer',
+    'modernEditorTab.activeHoverActionBackground': 'surfaceContainerHighest',
     'modernEditorTab.selectedActionBackground': 'surfaceContainerHighest',
     // Editor core
     'editor.background': 'surface',

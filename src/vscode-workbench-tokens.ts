@@ -13,7 +13,7 @@
  * Notes:
  * - VSCode only emits a CSS var for a token with a resolved value. IDs absent
  *   from this snapshot fall back to VSCode defaults at runtime (no CSS var).
- * - The curated generator schema (`src/vscode-schema.js`, 171 workbench color
+ * - The curated generator schema (`src/vscode-schema.js`, 179 workbench color
  *   IDs) is a subset: every schema key resolves to one of the color IDs below.
  * - Each interface property carries the live-exported value as `@example` so the
  *   snapshot doubles as a value reference. Values are examples, not contracts.

@@ -119,13 +119,19 @@ export const VSCODE_SIDEBAR_KEYS = Object.freeze([
     'sideBarSectionHeader.border'
 ]);
 
-/** Editor groups + tabs (26). Classic `tab.*` covers the default tab
+/** Editor groups + tabs (34). Classic `tab.*` covers the default tab
  * style; `modern*Tab.*` mirrors it for `workbench.experimental.modernUI`
  * (1.139: modern CSS reads `modernEditorTab.*` / `modernTab.*` instead of
  * `tab.*`, forces tab borders transparent, and hardcodes the inactive
  * foreground to a 50% `foreground` mix with no themeable ID —
  * microsoft/vscode#335148 — so `tab.inactiveForeground` only affects
- * classic). Both layers carry the same pill intent so the layouts agree. */
+ * classic). Both layers carry the same pill intent so the layouts agree.
+ * The `selected*` / `unfocused*` / `hoverForeground` IDs are explicit
+ * (never VSCode fallbacks): the fallback `selectedForeground` is a
+ * near-white that lands on the light neutral `selectedBackground`
+ * (white-on-light, user-reported invisible tab text), and the dimmed
+ * `unfocused*Foreground` fallbacks wash out on the light container
+ * steps for the same reason. */
 export const VSCODE_TABS_KEYS = Object.freeze([
     'editorGroup.border',
     'editorGroup.dropBackground',
@@ -137,8 +143,16 @@ export const VSCODE_TABS_KEYS = Object.freeze([
     'tab.inactiveBackground',
     'tab.inactiveForeground',
     'tab.hoverBackground',
+    'tab.hoverForeground',
     'tab.border',
+    'tab.selectedBackground',
+    'tab.selectedForeground',
     'tab.unfocusedActiveBackground',
+    'tab.unfocusedActiveForeground',
+    'tab.unfocusedHoverBackground',
+    'tab.unfocusedHoverForeground',
+    'tab.unfocusedInactiveBackground',
+    'tab.unfocusedInactiveForeground',
     'modernTab.activeBackground',
     'modernTab.activeForeground',
     'modernTab.hoverBackground',
@@ -288,7 +302,7 @@ export const VSCODE_MENU_KEYS = Object.freeze([
     'menu.border'
 ]);
 
-/** All workbench color IDs every emitted file must fill (171). */
+/** All workbench color IDs every emitted file must fill (179). */
 export const VSCODE_COLOR_KEYS = Object.freeze([
     ...VSCODE_BASE_KEYS,
     ...VSCODE_BUTTON_KEYS,

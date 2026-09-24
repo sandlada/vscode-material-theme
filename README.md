@@ -40,7 +40,7 @@ absolute GitHub URLs so they render on the Marketplace.
 - 3 appearances per combo: `light` (`uiTheme: vs`), `dark`
   (`uiTheme: vs-dark`), `dark-oled` (`uiTheme: vs-dark`, pitch-black
   editor surface).
-- Partial workbench coverage (171 of 874 color IDs), 26 TextMate rules, and
+- Partial workbench coverage (179 of 874 color IDs), 26 TextMate rules, and
   semantic tokens with `semanticHighlighting: true`. Unlisted IDs fall
   back to VSCode defaults at runtime.
 - Git diff + problem colors come from fixed MD3 tonal palettes
@@ -216,6 +216,18 @@ commands. Customize appearance per theme via:
   <https://github.com/sandlada/vscode-material-theme/issues>.
 
 ## Release Notes
+
+### 0.0.4
+
+- Fixed invisible tab text in modern UI connected-tabs style: the
+  connected active-tab fill is hardcoded to the editor surface while
+  the label keeps `modernEditorTab.activeForeground`, so the white
+  foreground died on the light surface (~1.0). `modernEditorTab`
+  active/hover/action states are now the neutral selection step
+  (`surfaceContainerHighest` / `onSurface`), readable under both the
+  pill fill and the surface fill in both appearances. Classic
+  `tab.active*` keeps the green pill (no connected variant there).
+- 291-file matrix regenerated with the new modern tab colors.
 
 ### 0.0.2
 
