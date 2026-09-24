@@ -81,8 +81,21 @@ function parseArgs(argv) {
 async function runSingle(variant, hue, out, contrast, spec, oled) {
     const cmd = ['bun', SINGLE, '--variant', variant, '--hue', String(hue), '--out', out, '--contrast', contrast, '--spec', spec];
     if (oled) cmd.push('--oled');
-    const proc = Bun.spawnSync(cmd, { cwd: ROOT, stdout: 'inherit', stderr: 'inherit' });
-    if (proc.exitCode !== 0) fail(`single-run failed for ${variant} ${hue}${oled ? ' (oled)' : ''} (exit ${proc.exitCode})`);
+    // Piped (not inherited): N workers share the terminal, so child chatter
+    // is captured and only surfaces on failure. `proc.exited` resolves the
+    // exit code; streams are drained concurrently so a verbose child can
+    // never block on a full pipe.
+    const proc = Bun.spawn(cmd, { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' });
+    const [stdout, stderr, exitCode] = await Promise.all([
+        new Response(proc.stdout).text(),
+        new Response(proc.stderr).text(),
+        proc.exited
+    ]);
+    if (exitCode !== 0) {
+        process.stdout.write(stdout);
+        process.stderr.write(stderr);
+        throw new Error(`single-run failed for ${variant} ${hue}${oled ? ' (oled)' : ''} (exit ${exitCode})`);
+    }
 }
 
 async function main() {
@@ -100,12 +113,18 @@ async function main() {
         }
     }
 
+    // 97 combos x plain/oled = 194 single-run tasks. Manifest entries are
+    // precomputed in sweep order so parallel completion order never
+    // scrambles `contributes.themes`.
+    const tasks = [];
     const entries = [];
     for (const variant of VARIANTS) {
         const hues = variant === 'Monochrome' ? [0] : [...HUES];
         for (const hue of hues) {
-            await runSingle(variant, hue, args.out, args.contrast, args.spec, false);
-            await runSingle(variant, hue, args.out, args.contrast, args.spec, true);
+            tasks.push(
+                { variant, hue, oled: false },
+                { variant, hue, oled: true }
+            );
             const slug = `md3-${VARIANT_SLUGS[variant]}-${hue}`;
             entries.push(
                 {
@@ -126,6 +145,35 @@ async function main() {
             );
         }
     }
+
+    // Fixed worker pool: each task is CPU-bound scheme resolution in its
+    // own `bun` process, so workers ~= cores. On the first failure workers
+    // stop pulling new tasks (in-flight tasks drain); the sweep then fails
+    // fast exactly like the old sequential loop.
+    const concurrency = Math.max(1, Math.min(tasks.length, navigator.hardwareConcurrency ?? 8));
+    console.log(`running ${tasks.length} single-runs x${concurrency}...`);
+    let next = 0;
+    let done = 0;
+    let failure = null;
+    async function worker() {
+        while (failure === null) {
+            const i = next++;
+            if (i >= tasks.length) return;
+            const task = tasks[i];
+            try {
+                await runSingle(task.variant, task.hue, args.out, args.contrast, args.spec, task.oled);
+            } catch (error) {
+                failure = error;
+                return;
+            }
+            done += 1;
+            if (done % 20 === 0 || done === tasks.length) {
+                console.log(`progress ${done}/${tasks.length}`);
+            }
+        }
+    }
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+    if (failure !== null) fail(failure.message);
 
     // Register every emitted file in the extension manifest so the picker
     // sees the full matrix.

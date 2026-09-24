@@ -163,7 +163,7 @@ OpenCode one-file-two-appearances rule cannot carry over:
 
 ## Workflow (order matters; single-run + matrix DONE)
 
-1. `src/vscode-schema.js` — DONE (v1 source of truth): 154 workbench
+1. `src/vscode-schema.js` — DONE (v1 source of truth): 171 workbench
    color IDs (curated from `dark_modern.json`/`dark_vs.json`, incl. 6
    `menu.*` IDs so context menus use `surface` + `outlineVariant`
    border instead of the neutral fallback, 6

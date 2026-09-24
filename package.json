@@ -1,9 +1,9 @@
 {
   "name": "vscode-material-design-theme",
   "displayName": "Material Design 3 Theme",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "sandlada",
-  "description": "Material Design 3 (Material You) color themes for VSCode. Ported from @sandlada/opencode-material-theme (OpenCode TUI). 291 static themes: 9 variants x 12 HCT hues (Monochrome hue 0 only) x light/dark/dark-oled.",
+  "description": "Material Design 3 (Material You) color themes for VSCode. 291 static themes: 9 variants x 12 HCT hues (Monochrome hue 0 only) x light/dark/dark-oled.",
   "repository": {
     "type": "git",
     "url": "https://github.com/sandlada/vscode-material-theme.git"

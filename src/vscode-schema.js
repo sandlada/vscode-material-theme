@@ -91,13 +91,19 @@ export const VSCODE_LIST_KEYS = Object.freeze([
     'list.warningForeground'
 ]);
 
-/** Activity bar (7). */
+/** Activity bar (10). `modernActivityBarItem.*` is what the modern UI
+ * actually reads for item states (legacy `activityBar.foreground` /
+ * `activeBackground` are ignored there); both layers are set so classic
+ * and modern layouts agree. */
 export const VSCODE_ACTIVITY_KEYS = Object.freeze([
     'activityBar.background',
     'activityBar.foreground',
     'activityBar.inactiveForeground',
     'activityBar.border',
+    'activityBar.activeBackground',
     'activityBar.activeBorder',
+    'modernActivityBarItem.activeBackground',
+    'modernActivityBarItem.activeForeground',
     'activityBarBadge.background',
     'activityBarBadge.foreground'
 ]);
@@ -113,7 +119,13 @@ export const VSCODE_SIDEBAR_KEYS = Object.freeze([
     'sideBarSectionHeader.border'
 ]);
 
-/** Editor groups + tabs (12). */
+/** Editor groups + tabs (26). Classic `tab.*` covers the default tab
+ * style; `modern*Tab.*` mirrors it for `workbench.experimental.modernUI`
+ * (1.139: modern CSS reads `modernEditorTab.*` / `modernTab.*` instead of
+ * `tab.*`, forces tab borders transparent, and hardcodes the inactive
+ * foreground to a 50% `foreground` mix with no themeable ID —
+ * microsoft/vscode#335148 — so `tab.inactiveForeground` only affects
+ * classic). Both layers carry the same pill intent so the layouts agree. */
 export const VSCODE_TABS_KEYS = Object.freeze([
     'editorGroup.border',
     'editorGroup.dropBackground',
@@ -126,7 +138,21 @@ export const VSCODE_TABS_KEYS = Object.freeze([
     'tab.inactiveForeground',
     'tab.hoverBackground',
     'tab.border',
-    'tab.unfocusedActiveBackground'
+    'tab.unfocusedActiveBackground',
+    'modernTab.activeBackground',
+    'modernTab.activeForeground',
+    'modernTab.hoverBackground',
+    'modernTab.hoverForeground',
+    'modernEditorTab.activeBackground',
+    'modernEditorTab.activeForeground',
+    'modernEditorTab.inactiveBackground',
+    'modernEditorTab.hoverBackground',
+    'modernEditorTab.hoverForeground',
+    'modernEditorTab.activeHoverBackground',
+    'modernEditorTab.activeActionBackground',
+    'modernEditorTab.hoverActionBackground',
+    'modernEditorTab.activeHoverActionBackground',
+    'modernEditorTab.selectedActionBackground'
 ]);
 
 /** Editor core (26). IDs whose reference says "must not be opaque" are
@@ -262,7 +288,7 @@ export const VSCODE_MENU_KEYS = Object.freeze([
     'menu.border'
 ]);
 
-/** All workbench color IDs every emitted file must fill (154). */
+/** All workbench color IDs every emitted file must fill (171). */
 export const VSCODE_COLOR_KEYS = Object.freeze([
     ...VSCODE_BASE_KEYS,
     ...VSCODE_BUTTON_KEYS,

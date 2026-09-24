@@ -156,34 +156,68 @@ export const VSCODE_COLOR_BASE = Object.freeze({
     'list.highlightForeground': 'primary',
     'list.errorForeground': { palette: 'red', tier: 'text' },
     'list.warningForeground': { palette: 'amber', tier: 'text' },
-    // Activity bar
-    'activityBar.background': 'surfaceContainer',
-    'activityBar.foreground': 'onSurface',
+    // Activity bar (active icon is a filled pill: `primary` backplate +
+    // `onPrimary` glyph; `activeBorder` stays `primary` and merges into it).
+    // The `modernActivityBarItem.*` pair is the same pill for the modern UI,
+    // which ignores the legacy `activityBar.foreground` / `activeBackground`
+    // IDs (user-reported: legacy-only left the active glyph dark on 1.139).
+    'activityBar.background': 'surfaceContainerLow',
+    'activityBar.foreground': 'onPrimary',
     'activityBar.inactiveForeground': 'onSurfaceVariant',
     'activityBar.border': 'outlineVariant',
-    'activityBar.activeBorder': 'primary',
-    'activityBarBadge.background': 'primary',
-    'activityBarBadge.foreground': 'onPrimary',
-    // Side bar
-    'sideBar.background': 'surfaceContainer',
+    'activityBar.activeBackground': 'primary',
+    'activityBar.activeBorder': 'onPrimary',
+    'modernActivityBarItem.activeBackground': 'primary',
+    'modernActivityBarItem.activeForeground': 'onPrimary',
+    // Badges (e.g. the Source Control count) use the container pair, not
+    // `primary`/`onPrimary`: the badge must stay visible when its own view
+    // is active and the pill behind it is already `primary`.
+    'activityBarBadge.background': 'primaryContainer',
+    'activityBarBadge.foreground': 'onPrimaryContainer',
+    // Side bar (Explorer panel): plain `surface`, matching the editor and
+    // bottom panel sheets; the Low step lives on the activity rail instead.
+    'sideBar.background': 'surface',
     'sideBar.foreground': 'onSurface',
     'sideBar.border': 'outlineVariant',
     'sideBarTitle.foreground': 'onSurface',
-    'sideBarSectionHeader.background': 'surfaceContainer',
+    'sideBarSectionHeader.background': 'surface',
     'sideBarSectionHeader.foreground': 'onSurfaceVariant',
     'sideBarSectionHeader.border': 'outlineVariant',
-    // Editor groups + tabs
+    // Editor groups + tabs (classic `tab.*` + modern `modern*Tab.*`).
+    // The active pill is `primaryContainer` / `onPrimaryContainer`;
+    // `tab.activeBorderTop` stays `primary` for classic (modern forces tab
+    // borders transparent, so the pill alone marks the active tab there).
+    // Modern action backgrounds mirror the fill they sit on (opaque,
+    // otherwise the close-icon gradient shows the VSCode default gray);
+    // `selectedActionBackground` tracks the hover step (the selected fill
+    // itself is unthemed by design, like classic `tab.selectedBackground`).
+    // Modern has no inactive-foreground ID (upstream hardcodes a 50%
+    // `foreground` mix), so only backgrounds/foregrounds with IDs are set.
     'editorGroup.border': 'outlineVariant',
-    'editorGroupHeader.tabsBackground': 'surfaceContainer',
+    'editorGroupHeader.tabsBackground': 'surfaceContainerLow',
     'editorGroupHeader.tabsBorder': 'outlineVariant',
-    'tab.activeBackground': 'surface',
-    'tab.activeForeground': 'onSurface',
+    'tab.activeBackground': 'primaryContainer',
+    'tab.activeForeground': 'onPrimaryContainer',
     'tab.activeBorderTop': 'primary',
-    'tab.inactiveBackground': 'surfaceContainerHigh',
+    'tab.inactiveBackground': 'surfaceVariant',
     'tab.inactiveForeground': 'onSurfaceVariant',
     'tab.hoverBackground': 'surfaceContainerHighest',
     'tab.border': 'outlineVariant',
     'tab.unfocusedActiveBackground': 'surfaceContainer',
+    'modernTab.activeBackground': 'primary',
+    'modernTab.activeForeground': 'onPrimary',
+    'modernTab.hoverBackground': 'surfaceContainerHighest',
+    'modernTab.hoverForeground': 'onSurface',
+    'modernEditorTab.activeBackground': 'primaryContainer',
+    'modernEditorTab.activeForeground': 'onPrimaryContainer',
+    'modernEditorTab.inactiveBackground': 'surfaceVariant',
+    'modernEditorTab.hoverBackground': 'surfaceContainerHighest',
+    'modernEditorTab.hoverForeground': 'onSurfaceVariant',
+    'modernEditorTab.activeHoverBackground': 'primaryContainer',
+    'modernEditorTab.activeActionBackground': 'primaryContainer',
+    'modernEditorTab.hoverActionBackground': 'surfaceContainerHighest',
+    'modernEditorTab.activeHoverActionBackground': 'primaryContainer',
+    'modernEditorTab.selectedActionBackground': 'surfaceContainerHighest',
     // Editor core
     'editor.background': 'surface',
     'editor.foreground': 'onSurface',
@@ -299,7 +333,7 @@ export const VSCODE_COLOR_BASE = Object.freeze({
 export const VSCODE_COLOR_LIGHT_POPUP = Object.freeze({
     'dropdown.listBackground': 'surfaceBright',
     'menu.background': 'surfaceBright',
-    'quickInput.background': 'surfaceBright',
+    'quickInput.background': 'surface',
     'notifications.background': 'surfaceBright',
     'menu.selectionBackground': 'surfaceContainerHighest',
     'quickInputList.focusBackground': 'surfaceContainerHighest'
@@ -308,7 +342,7 @@ export const VSCODE_COLOR_LIGHT_POPUP = Object.freeze({
 export const VSCODE_COLOR_DARK_POPUP = Object.freeze({
     'dropdown.listBackground': 'surfaceBright',
     'menu.background': 'surfaceBright',
-    'quickInput.background': 'surfaceBright',
+    'quickInput.background': 'surface',
     'notifications.background': 'surfaceBright',
     'menu.selectionBackground': 'surfaceContainerHigh',
     'quickInputList.focusBackground': 'surfaceContainerHigh'
